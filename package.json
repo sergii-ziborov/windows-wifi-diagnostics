@@ -1,0 +1,69 @@
+{
+  "name": "windows-wifi-diagnostics",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first Windows Wi-Fi diagnostics, evidence timelines, and network inventory",
+  "author": "Sergii Ziborov",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sergii-ziborov/windows-wifi-diagnostics.git"
+  },
+  "homepage": "https://github.com/sergii-ziborov/windows-wifi-diagnostics#readme",
+  "bugs": {
+    "url": "https://github.com/sergii-ziborov/windows-wifi-diagnostics/issues"
+  },
+  "keywords": [
+    "electron",
+    "windows",
+    "wifi",
+    "network-diagnostics",
+    "wireless-security",
+    "react",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "overrides": {
+    "vite": {
+      "esbuild": "0.28.1"
+    }
+  },
+  "main": "./out/main/index.js",
+  "scripts": {
+    "dev": "node scripts/run-electron-vite.mjs dev",
+    "build": "tsc --noEmit && electron-vite build",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "check": "npm run typecheck && npm test",
+    "baseline:status": "tsx src/cli/baseline.ts status",
+    "baseline:networks": "tsx src/cli/baseline.ts networks",
+    "baseline:diagnostics": "tsx src/cli/baseline.ts diagnostics",
+    "baseline:diagnostics:list": "tsx src/cli/baseline.ts diagnostics-list",
+    "baseline:runs": "tsx src/cli/baseline.ts runs",
+    "baseline:analyze": "tsx src/cli/baseline.ts analyze",
+    "baseline:report": "tsx src/cli/baseline.ts report",
+    "baseline:compare": "tsx src/cli/baseline.ts compare",
+    "baseline:events": "tsx src/cli/baseline.ts events",
+    "baseline:timeline": "tsx src/cli/baseline.ts timeline",
+    "baseline:collect": "tsx src/cli/baseline.ts collect",
+    "baseline:sample": "tsx src/cli/baseline.ts collect --duration 60 --interval 5"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "electron": "^42.6.1",
+    "electron-vite": "^4.0.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.6",
+    "vitest": "^4.0.13"
+  }
+}

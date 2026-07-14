@@ -1,0 +1,35 @@
+# Dependencies and build output
+node_modules/
+dist/
+.dist/
+out/
+release/
+.vite/
+.cache/
+coverage/
+*.tsbuildinfo
+
+# Runtime state and collected network data
+data/
+*.sqlite
+*.sqlite-*
+*.db
+*.db-*
+
+# Local logs and visual QA captures
+*.log
+npm-debug.log*
+tmp-shots/
+tmp-monitor-*
+electron.vite.config.*.mjs
+
+# Local tooling and secrets
+.claude/
+.env
+.env.*
+!.env.example
+.npmrc
+*.local
+
+# Superseded local research notes (not part of the public product)
+plan/

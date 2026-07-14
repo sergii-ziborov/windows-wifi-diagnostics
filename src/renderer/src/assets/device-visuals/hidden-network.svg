@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Hidden network">
+  <rect width="96" height="96" rx="18" fill="#eef2f3"/>
+  <circle cx="48" cy="48" r="27" fill="#59646b"/>
+  <path d="M31 49c9-12 25-12 34 0" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M39 58c5-6 13-6 18 0" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="48" cy="67" r="4" fill="#ffffff"/>
+  <path d="M27 69l42-42" stroke="#f07b61" stroke-width="7" stroke-linecap="round"/>
+</svg>

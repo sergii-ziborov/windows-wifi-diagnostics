@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Local randomized MAC">
+  <rect width="96" height="96" rx="18" fill="#eef2ff"/>
+  <rect x="25" y="27" width="46" height="42" rx="10" fill="#5a6da8"/>
+  <path d="M36 44h24M36 55h15" stroke="#ffffff" stroke-width="5" stroke-linecap="round"/>
+  <path d="M34 27v-8M62 27v-8M34 77v-8M62 77v-8M25 39h-8M25 58h-8M79 39h-8M79 58h-8" stroke="#5a6da8" stroke-width="5" stroke-linecap="round"/>
+  <path d="M61 62l9 9M70 62l-9 9" stroke="#f4c95d" stroke-width="5" stroke-linecap="round"/>
+</svg>
