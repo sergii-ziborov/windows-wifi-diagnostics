@@ -24,6 +24,30 @@ html {
   padding: 10px 24px 20px;
 }
 
+/* Map tab: pin the shell to the viewport and let the map flex into whatever space
+   is left after the header, banners, and history scrubber — so the page itself
+   never grows a scrollbar regardless of how tall the chrome above the map is. */
+.app-shell-fixed {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.app-shell-fixed .map-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+.app-shell-fixed .map-panel:not(.map-panel-fullscreen) {
+  height: auto;
+  max-height: none;
+  min-height: 0;
+}
+
 /* Sticky command bar: content scrolls beneath it on the page scroller (body). */
 .header-band {
   position: sticky;
@@ -1785,6 +1809,249 @@ h3 {
 .local-network-check-review em {
   background: #2a100d;
   color: #ff4d3d;
+}
+
+/* Interactive device rows: a full-width "open detail" button plus a star toggle.
+   Shared by the visible-devices list and the watchlist. */
+.local-network-watchlist {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid rgba(252, 238, 10, 0.4);
+  border-radius: 0;
+  background: #191505;
+}
+
+.local-network-watchlist > strong {
+  display: block;
+  margin-bottom: 8px;
+  color: #fcee0a;
+}
+
+.local-network-watchlist ol {
+  display: grid;
+  gap: 0;
+  max-height: 200px;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.local-network-watchlist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(252, 238, 10, 0.22);
+}
+
+.local-network-watchlist li:last-child {
+  border-bottom: 0;
+}
+
+.local-network-device-open {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.local-network-device-open:hover .local-network-device-id strong,
+.local-network-device-open:focus-visible .local-network-device-id strong {
+  color: #fcee0a;
+}
+
+.local-network-device-open:focus-visible {
+  outline: 2px solid rgba(252, 238, 10, 0.7);
+  outline-offset: 2px;
+}
+
+.local-network-device-id {
+  min-width: 0;
+}
+
+.local-network-device-id strong {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.local-network-device-id small {
+  display: block;
+  margin-top: 2px;
+  color: #8f8b6d;
+  font-size: 11px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.local-network-device-badge {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 0;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  background: #2a100d;
+  color: #ff4d3d;
+}
+
+.local-network-device-active .local-network-device-badge {
+  background: #12210e;
+  color: #7ddb5a;
+}
+
+.local-network-device-stale .local-network-device-badge {
+  background: #241f0a;
+  color: #fcee0a;
+}
+
+.local-network-device-unknown .local-network-device-badge,
+.local-network-device-absent .local-network-device-badge {
+  background: #2a100d;
+  color: #ff4d3d;
+}
+
+.local-network-star {
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(252, 238, 10, 0.3);
+  border-radius: 0;
+  background: #14140e;
+  color: #6f6a4d;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    color 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.local-network-star:hover,
+.local-network-star:focus-visible {
+  color: #fcee0a;
+  border-color: rgba(252, 238, 10, 0.7);
+  outline: none;
+}
+
+.local-network-star-on {
+  color: #fcee0a;
+  border-color: rgba(252, 238, 10, 0.7);
+  text-shadow: 0 0 8px rgba(252, 238, 10, 0.6);
+}
+
+/* Local device detail modal */
+.local-device-modal {
+  max-width: 560px;
+}
+
+.local-device-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 14px 0 0;
+}
+
+.local-device-facts div {
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(252, 238, 10, 0.26);
+  background: #14140e;
+}
+
+.local-device-facts dt {
+  color: #8f8b6d;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.local-device-facts dd {
+  margin: 4px 0 0;
+  color: #fcee0a;
+  font-size: 13px;
+  font-weight: 900;
+  overflow-wrap: anywhere;
+}
+
+.local-device-notes {
+  margin-top: 14px;
+}
+
+.local-device-notes strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.local-device-notes ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: #b9b48f;
+  font-size: 12px;
+}
+
+.local-device-watch {
+  display: grid;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.local-device-watch-toggle {
+  justify-self: start;
+  padding: 8px 14px;
+  border: 1px solid rgba(252, 238, 10, 0.45);
+  border-radius: 0;
+  background: #14140e;
+  color: #cfca9c;
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.local-device-watch-toggle-on {
+  background: #191505;
+  color: #fcee0a;
+  text-shadow: 0 0 8px rgba(252, 238, 10, 0.6);
+}
+
+.local-device-watch-label {
+  display: grid;
+  gap: 5px;
+}
+
+.local-device-watch-label span {
+  color: #8f8b6d;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.local-device-watch-label input {
+  padding: 8px 10px;
+  border: 1px solid rgba(252, 238, 10, 0.35);
+  border-radius: 0;
+  background: #0d0d08;
+  color: #eae6cb;
+  font: inherit;
+}
+
+.local-device-watch-label input:focus-visible {
+  border-color: rgba(252, 238, 10, 0.8);
+  outline: none;
 }
 
 .leak-report-panel {

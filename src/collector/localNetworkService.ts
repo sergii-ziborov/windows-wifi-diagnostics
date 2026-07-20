@@ -152,12 +152,20 @@ async function applyReachabilityPoll(
   }
 
   const quotedTargets = targets.map((target) => `'${target.replace(/'/g, "''")}'`).join(',');
+  // Use System.Net.NetworkInformation.Ping directly instead of Test-Connection:
+  // Windows PowerShell 5.1's Test-Connection has no -TimeoutSeconds parameter (that
+  // arrives with PowerShell 7), so the older shell would fail to bind and the poll
+  // would silently return nothing. The .NET ping works identically on 5.1 and 7 and
+  // gives us both a hard per-host timeout and the round-trip latency.
   const script = [
     `$targets = @(${quotedTargets});`,
+    '$ping = New-Object System.Net.NetworkInformation.Ping;',
     '$targets | ForEach-Object {',
-    '$probe = Test-Connection -ComputerName $_ -Count 1 -TimeoutSeconds 1 -ErrorAction SilentlyContinue | Select-Object -First 1;',
-    '$ok = $null -ne $probe;',
-    '$latency = if ($probe -and $probe.ResponseTime -ne $null) { [int]$probe.ResponseTime } else { $null };',
+    '$ok = $false; $latency = $null;',
+    'try {',
+    '$reply = $ping.Send($_, 1000);',
+    "if ($reply -and $reply.Status -eq [System.Net.NetworkInformation.IPStatus]::Success) { $ok = $true; $latency = [int]$reply.RoundtripTime }",
+    '} catch { };',
     '[pscustomobject]@{ IPAddress = $_; Reachable = $ok; LatencyMs = $latency }',
     '} | ConvertTo-Json -Depth 3'
   ].join(' ');

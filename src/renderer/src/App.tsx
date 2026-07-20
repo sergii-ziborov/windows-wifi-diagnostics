@@ -53,6 +53,7 @@ import type {
   DeviceVulnerabilityLookupResult,
   DetectorAlert,
   DeviceIntelligenceOverride,
+  LocalNetworkDevice,
   LocalNetworkScanMode,
   LocalNetworkScanResult,
   ScanIdentityChangeResult,
@@ -697,6 +698,11 @@ const NETWORK_HISTORY_LIMIT = 96;
 // moment the map opens, instead of starting empty every session.
 const NETWORK_HISTORY_STORAGE_KEY = 'monitor.network_history.v1';
 const NETWORK_HISTORY_PERSIST_LIMIT = 30;
+// Watchlist of local-network devices the operator wants to keep an eye on across
+// scans and sessions. Keyed by MAC when known (survives DHCP lease changes),
+// otherwise by IP.
+const LOCAL_NETWORK_STARRED_STORAGE_KEY = 'monitor.local_network_starred.v1';
+const LOCAL_NETWORK_STARRED_LIMIT = 200;
 const SAMPLE_RESULT_VISIBLE_MS = 12_000;
 const LOCAL_MAP_NODE_KEY = '__local_wifi_client__';
 const MAP_VISIBLE_ITEM_LIMIT = 80;
@@ -2044,7 +2050,7 @@ export function App() {
   }, [baselineRunId, candidateRunId]);
 
   return (
-    <main className="app-shell">
+    <main className={activeTab === 'map' ? 'app-shell app-shell-fixed' : 'app-shell'}>
       <section className="header-band">
         <div className="header-main">
           <h1>Monitor</h1>
@@ -2453,6 +2459,115 @@ export function App() {
   );
 }
 
+interface StarredLocalDevice {
+  key: string;
+  ip_address: string | null;
+  mac_address: string | null;
+  hostname: string | null;
+  label: string;
+  starred_at_utc: string;
+}
+
+function localDeviceKey(device: Pick<LocalNetworkDevice, 'mac_address' | 'ip_address'>): string {
+  return device.mac_address ? `mac:${device.mac_address}` : `ip:${device.ip_address}`;
+}
+
+function macOuiLabel(mac: string | null): string {
+  if (!mac) {
+    return 'unknown';
+  }
+  const hex = mac.replace(/[^a-fA-F0-9]/g, '');
+  if (hex.length < 6) {
+    return 'unknown';
+  }
+  return (hex.slice(0, 6).match(/.{2}/g)?.join(':') ?? 'unknown').toUpperCase();
+}
+
+function starredEntryToDevice(entry: StarredLocalDevice): LocalNetworkDevice {
+  return {
+    ip_address: entry.ip_address ?? 'unknown',
+    mac_address: entry.mac_address,
+    hostname: entry.hostname,
+    latency_ms: null,
+    state: 'unknown',
+    interface_alias: null,
+    is_gateway: false,
+    source: 'net_neighbor',
+    notes: ['Not seen in the latest scan. Details shown are from when this device was last starred.']
+  };
+}
+
+function loadStarredLocalDevices(): StarredLocalDevice[] {
+  try {
+    const raw = window.localStorage?.getItem(LOCAL_NETWORK_STARRED_STORAGE_KEY);
+    if (!raw) {
+      return [];
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as StarredLocalDevice[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStarredLocalDevices(items: StarredLocalDevice[]): void {
+  try {
+    window.localStorage?.setItem(
+      LOCAL_NETWORK_STARRED_STORAGE_KEY,
+      JSON.stringify(items.slice(0, LOCAL_NETWORK_STARRED_LIMIT))
+    );
+  } catch {
+    // Best-effort: quota or serialization failures should not break the scan view.
+  }
+}
+
+function useStarredLocalDevices() {
+  const [starred, setStarred] = useState<StarredLocalDevice[]>(() => loadStarredLocalDevices());
+
+  const commit = useCallback((updater: (current: StarredLocalDevice[]) => StarredLocalDevice[]) => {
+    setStarred((current) => {
+      const next = updater(current);
+      saveStarredLocalDevices(next);
+      return next;
+    });
+  }, []);
+
+  const toggleStar = useCallback(
+    (device: LocalNetworkDevice) => {
+      const key = localDeviceKey(device);
+      commit((current) =>
+        current.some((item) => item.key === key)
+          ? current.filter((item) => item.key !== key)
+          : [
+              ...current,
+              {
+                key,
+                ip_address: device.ip_address,
+                mac_address: device.mac_address,
+                hostname: device.hostname,
+                label: '',
+                starred_at_utc: new Date().toISOString()
+              }
+            ]
+      );
+    },
+    [commit]
+  );
+
+  const removeStar = useCallback(
+    (key: string) => commit((current) => current.filter((item) => item.key !== key)),
+    [commit]
+  );
+
+  const updateLabel = useCallback(
+    (key: string, label: string) =>
+      commit((current) => current.map((item) => (item.key === key ? { ...item, label } : item))),
+    [commit]
+  );
+
+  return { starred, toggleStar, removeStar, updateLabel };
+}
+
 function LocalNetworkPanel({
   snapshot,
   state,
@@ -2479,6 +2594,14 @@ function LocalNetworkPanel({
   const result = state.result;
   const runningMode = state.loading ? state.mode : null;
   const selectedProfile = SCAN_VISIBILITY_PROFILES.find((profile) => profile.mode === (runningMode ?? result?.mode));
+
+  const { starred, toggleStar, removeStar, updateLabel } = useStarredLocalDevices();
+  const [selectedDevice, setSelectedDevice] = useState<LocalNetworkDevice | null>(null);
+  const devices = result?.devices ?? [];
+  const deviceByKey = new Map(devices.map((device) => [localDeviceKey(device), device] as const));
+  const starredKeys = new Set(starred.map((item) => item.key));
+  const selectedKey = selectedDevice ? localDeviceKey(selectedDevice) : null;
+  const selectedStarred = selectedKey ? starred.find((item) => item.key === selectedKey) ?? null : null;
 
   return (
     <section className="panel local-network-panel" aria-label="Local network scan">
@@ -2532,28 +2655,87 @@ function LocalNetworkPanel({
               <dd>{result.prefix ? `${result.prefix}.0/24` : 'unknown'}</dd>
             </div>
           </dl>
+          {starred.length > 0 ? (
+            <div className="local-network-watchlist">
+              <strong>Watchlist ({starred.length})</strong>
+              <ol>
+                {starred.map((entry) => {
+                  const live = deviceByKey.get(entry.key) ?? null;
+                  return (
+                    <li
+                      key={entry.key}
+                      className={live ? `local-network-device-row local-network-device-${live.state}` : 'local-network-device-row local-network-device-absent'}
+                    >
+                      <button
+                        type="button"
+                        className="local-network-device-open"
+                        onClick={() => setSelectedDevice(live ?? starredEntryToDevice(entry))}
+                      >
+                        <span className="local-network-device-id">
+                          <strong>{entry.label || entry.hostname || entry.ip_address || 'unknown device'}</strong>
+                          <small>
+                            {entry.ip_address ? `${entry.ip_address} | ` : ''}
+                            {valueOrUnknown(entry.mac_address)}
+                          </small>
+                        </span>
+                        <span className="local-network-device-badge">{live ? live.state : 'not seen'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="local-network-star local-network-star-on"
+                        onClick={() => removeStar(entry.key)}
+                        aria-label="Remove from watchlist"
+                      >
+                        {'★'}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+          ) : null}
           <div className="local-network-columns">
             <div className="local-network-device-list">
               <strong>Visible devices</strong>
-              {result.devices.length === 0 ? (
+              {devices.length === 0 ? (
                 <p className="muted compact">No local devices were visible from this client.</p>
               ) : (
                 <ol>
-                  {result.devices.slice(0, 48).map((device) => (
-                    <li key={device.ip_address} className={`local-network-device-${device.state}`}>
-                      <span>
-                        <strong>{device.ip_address}</strong>
-                        <small>
-                          {device.hostname ? `${device.hostname} | ` : ''}
-                          {device.is_gateway ? 'gateway | ' : ''}
-                          {valueOrUnknown(device.mac_address)} | {valueOrUnknown(device.interface_alias)}
-                          {device.latency_ms !== null ? ` | ${device.latency_ms} ms` : ''}
-                          {` | ${formatLocalDeviceSource(device.source)}`}
-                        </small>
-                      </span>
-                      <span>{device.state}</span>
-                    </li>
-                  ))}
+                  {devices.slice(0, 48).map((device) => {
+                    const key = localDeviceKey(device);
+                    const isStarred = starredKeys.has(key);
+                    return (
+                      <li key={device.ip_address} className={`local-network-device-row local-network-device-${device.state}`}>
+                        <button
+                          type="button"
+                          className="local-network-device-open"
+                          onClick={() => setSelectedDevice(device)}
+                          aria-label={`Inspect ${device.ip_address}`}
+                        >
+                          <span className="local-network-device-id">
+                            <strong>{device.ip_address}</strong>
+                            <small>
+                              {device.hostname ? `${device.hostname} | ` : ''}
+                              {device.is_gateway ? 'gateway | ' : ''}
+                              {valueOrUnknown(device.mac_address)} | {valueOrUnknown(device.interface_alias)}
+                              {device.latency_ms !== null ? ` | ${device.latency_ms} ms` : ''}
+                              {` | ${formatLocalDeviceSource(device.source)}`}
+                            </small>
+                          </span>
+                          <span className="local-network-device-badge">{device.state}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={isStarred ? 'local-network-star local-network-star-on' : 'local-network-star'}
+                          onClick={() => toggleStar(device)}
+                          aria-pressed={isStarred}
+                          aria-label={isStarred ? `Unstar ${device.ip_address}` : `Star ${device.ip_address}`}
+                        >
+                          {isStarred ? '★' : '☆'}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ol>
               )}
             </div>
@@ -2574,7 +2756,140 @@ function LocalNetworkPanel({
           </div>
         </div>
       ) : null}
+      {selectedDevice ? (
+        <LocalNetworkDeviceModal
+          device={selectedDevice}
+          starredEntry={selectedStarred}
+          onClose={() => setSelectedDevice(null)}
+          onToggleStar={() => toggleStar(selectedDevice)}
+          onLabelChange={(label) => updateLabel(localDeviceKey(selectedDevice), label)}
+        />
+      ) : null}
     </section>
+  );
+}
+
+function LocalNetworkDeviceModal({
+  device,
+  starredEntry,
+  onClose,
+  onToggleStar,
+  onLabelChange
+}: {
+  device: LocalNetworkDevice;
+  starredEntry: StarredLocalDevice | null;
+  onClose: () => void;
+  onToggleStar: () => void;
+  onLabelChange: (label: string) => void;
+}) {
+  useBodyScrollLock(true);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onClose]);
+
+  const starred = starredEntry !== null;
+
+  return (
+    <ModalPortal>
+      <div className="device-modal-backdrop insight-modal-backdrop" role="presentation" onMouseDown={onClose}>
+        <section
+          className="device-modal insight-modal local-device-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="local-device-modal-title"
+          onMouseDown={(event) => event.stopPropagation()}
+        >
+          <div className="insight-modal-heading">
+            <div>
+              <h2 id="local-device-modal-title">{device.hostname ?? device.ip_address}</h2>
+              <p>
+                {device.is_gateway ? 'gateway | ' : ''}
+                {valueOrUnknown(device.mac_address)} | {device.state}
+              </p>
+            </div>
+            <button type="button" className="device-modal-close" onClick={onClose} aria-label="Close device details">
+              x
+            </button>
+          </div>
+          <dl className="local-device-facts">
+            <div>
+              <dt>IP address</dt>
+              <dd>{valueOrUnknown(device.ip_address)}</dd>
+            </div>
+            <div>
+              <dt>MAC address</dt>
+              <dd>{valueOrUnknown(device.mac_address)}</dd>
+            </div>
+            <div>
+              <dt>OUI (vendor prefix)</dt>
+              <dd>{macOuiLabel(device.mac_address)}</dd>
+            </div>
+            <div>
+              <dt>Hostname</dt>
+              <dd>{valueOrUnknown(device.hostname)}</dd>
+            </div>
+            <div>
+              <dt>State</dt>
+              <dd>{device.state}</dd>
+            </div>
+            <div>
+              <dt>Role</dt>
+              <dd>{device.is_gateway ? 'gateway' : 'host'}</dd>
+            </div>
+            <div>
+              <dt>Interface</dt>
+              <dd>{valueOrUnknown(device.interface_alias)}</dd>
+            </div>
+            <div>
+              <dt>Latency</dt>
+              <dd>{device.latency_ms !== null ? `${device.latency_ms} ms` : 'not measured'}</dd>
+            </div>
+            <div>
+              <dt>Evidence</dt>
+              <dd>{formatLocalDeviceSource(device.source)}</dd>
+            </div>
+          </dl>
+          {device.notes.length > 0 ? (
+            <div className="local-device-notes">
+              <strong>Notes</strong>
+              <ul>
+                {device.notes.map((note, index) => (
+                  <li key={index}>{note}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          <div className="local-device-watch">
+            <button
+              type="button"
+              className={starred ? 'local-device-watch-toggle local-device-watch-toggle-on' : 'local-device-watch-toggle'}
+              onClick={onToggleStar}
+            >
+              {starred ? '★ On watchlist — remove' : '☆ Add to watchlist'}
+            </button>
+            {starred ? (
+              <label className="local-device-watch-label">
+                <span>Watchlist note</span>
+                <input
+                  type="text"
+                  value={starredEntry.label}
+                  placeholder="e.g. office printer, or: unknown — investigate"
+                  onChange={(event) => onLabelChange(event.target.value)}
+                  maxLength={120}
+                />
+              </label>
+            ) : null}
+          </div>
+        </section>
+      </div>
+    </ModalPortal>
   );
 }
 
