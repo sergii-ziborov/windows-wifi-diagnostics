@@ -351,7 +351,7 @@ interface SourceControls {
   nearbyAps: boolean;
 }
 
-type AppTab = 'overview' | 'map' | 'reports' | 'channels';
+type AppTab = 'overview' | 'map' | 'network' | 'reports' | 'channels';
 
 type SourceControlKey = keyof SourceControls;
 
@@ -538,6 +538,7 @@ const COLLECTION_PRESETS: CollectionPreset[] = [
 const APP_TABS: Array<{ key: AppTab; label: string }> = [
   { key: 'overview', label: 'Overview' },
   { key: 'map', label: 'Map' },
+  { key: 'network', label: 'Network' },
   { key: 'reports', label: 'Reports' },
   { key: 'channels', label: 'Channels' }
 ];
@@ -2129,7 +2130,7 @@ export function App() {
         </div>
       ) : null}
 
-      {activeTab === 'map' || activeTab === 'channels' ? (
+      {activeTab === 'map' || activeTab === 'network' || activeTab === 'channels' ? (
         <NetworkHistoryScrubber
           history={networkHistory}
           selectedId={selectedHistoryId}
@@ -2285,7 +2286,6 @@ export function App() {
       ) : null}
 
       {activeTab === 'map' ? (
-      <>
       <section className="map-grid">
         <LocationRfMap
           location={selectedScanLocation}
@@ -2326,6 +2326,10 @@ export function App() {
           onVulnerabilityLookupRecorded={recordVulnerabilityLookup}
         />
       </section>
+      ) : null}
+
+      {activeTab === 'network' ? (
+      <>
       <LocalNetworkPanel
         snapshot={firstSnapshot ?? null}
         state={localNetworkScanState}
