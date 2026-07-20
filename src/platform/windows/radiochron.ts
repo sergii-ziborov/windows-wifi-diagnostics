@@ -5,10 +5,10 @@ import type {
   WindowsNativeBssEntry,
   WindowsNativeBssResult
 } from '../../collector/types';
-import { getBeaconTrailClient } from '../../mcp/client';
+import { getRadioChronClient } from '../../mcp/client';
 
 /**
- * Nearby-BSS collection through the BeaconTrail MCP server.
+ * Nearby-BSS collection through the RadioChron MCP server.
  *
  * This replaces the two modules that used to emit C# and compile it at runtime
  * via PowerShell `Add-Type` to reach `wlanapi.dll`. The Rust server calls
@@ -21,7 +21,7 @@ const BSS_TIMEOUT_MS = 20_000;
 const SCAN_TIMEOUT_MS = 20_000;
 
 /** Shape of one entry in a `detail: "full"` wifi_networks response. */
-interface BeaconTrailNetwork {
+interface RadioChronNetwork {
   interface_guid?: string | null;
   ssid?: string | null;
   bssid?: string | null;
@@ -39,15 +39,15 @@ interface BeaconTrailNetwork {
   information_elements?: Partial<WifiInformationElementSummary> | null;
 }
 
-interface BeaconTrailNetworksResponse {
+interface RadioChronNetworksResponse {
   count?: number;
   refreshed?: boolean;
-  networks?: BeaconTrailNetwork[];
+  networks?: RadioChronNetwork[];
 }
 
 export async function requestNearbyWifiScan(): Promise<CollectorSourceStatus> {
   try {
-    const payload = (await getBeaconTrailClient().callTool('wifi_scan', {}, SCAN_TIMEOUT_MS)) as {
+    const payload = (await getRadioChronClient().callTool('wifi_scan', {}, SCAN_TIMEOUT_MS)) as {
       interfaces_scanning?: number;
     } | null;
 
@@ -69,13 +69,13 @@ export async function requestNearbyWifiScan(): Promise<CollectorSourceStatus> {
 
 export async function getNearbyWifiBssEntries(_context: EventContext): Promise<WindowsNativeBssResult> {
   try {
-    const payload = (await getBeaconTrailClient().callTool(
+    const payload = (await getRadioChronClient().callTool(
       'wifi_networks',
       { detail: 'full' },
       BSS_TIMEOUT_MS
-    )) as BeaconTrailNetworksResponse | null;
+    )) as RadioChronNetworksResponse | null;
 
-    const entries = mapBeaconTrailNetworks(payload);
+    const entries = mapRadioChronNetworks(payload);
 
     return {
       source: {
@@ -98,11 +98,11 @@ export async function getNearbyWifiBssEntries(_context: EventContext): Promise<W
 }
 
 /**
- * Translate a BeaconTrail `wifi_networks` payload into this app's BSS shape.
+ * Translate a RadioChron `wifi_networks` payload into this app's BSS shape.
  *
  * Pure and exported so it can be tested without a running server.
  */
-export function mapBeaconTrailNetworks(payload: BeaconTrailNetworksResponse | null): WindowsNativeBssEntry[] {
+export function mapRadioChronNetworks(payload: RadioChronNetworksResponse | null): WindowsNativeBssEntry[] {
   const networks = payload?.networks;
   if (!Array.isArray(networks)) {
     return [];

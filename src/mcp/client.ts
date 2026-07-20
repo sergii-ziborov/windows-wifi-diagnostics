@@ -3,9 +3,9 @@ import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 /**
- * Minimal MCP stdio client for the BeaconTrail server.
+ * Minimal MCP stdio client for the RadioChron server.
  *
- * BeaconTrail is the Rust engine that replaced this app's runtime-compiled C#
+ * RadioChron is the Rust engine that replaced this app's runtime-compiled C#
  * (`Add-Type` against `wlanapi.dll`). It speaks newline-delimited JSON-RPC 2.0,
  * so the client is a framing loop and a pending-request map — no SDK needed.
  *
@@ -34,15 +34,15 @@ interface JsonRpcResponse {
  * Explicit configuration wins, then the packaged copy, then the sibling
  * development checkout, and finally whatever is on PATH.
  */
-export function resolveBeaconTrailPath(): string {
-  const configured = process.env.BEACONTRAIL_MCP?.trim();
+export function resolveRadioChronPath(): string {
+  const configured = process.env.RADIOCHRON_MCP?.trim();
   if (configured) {
     return configured;
   }
 
   const candidates = [
-    join(process.resourcesPath ?? '', 'beacontrail.exe'),
-    resolve(process.cwd(), '..', 'beacontrail', 'target', 'release', 'beacontrail.exe')
+    join(process.resourcesPath ?? '', 'radiochron.exe'),
+    resolve(process.cwd(), '..', 'radiochron', 'target', 'release', 'radiochron.exe')
   ];
 
   for (const candidate of candidates) {
@@ -51,17 +51,17 @@ export function resolveBeaconTrailPath(): string {
     }
   }
 
-  return 'beacontrail.exe';
+  return 'radiochron.exe';
 }
 
-export class BeaconTrailClient {
+export class RadioChronClient {
   private child: ChildProcessWithoutNullStreams | null = null;
   private handshake: Promise<void> | null = null;
   private readonly pending = new Map<number, PendingRequest>();
   private buffer = '';
   private nextId = 1;
 
-  constructor(private readonly executablePath: string = resolveBeaconTrailPath()) {}
+  constructor(private readonly executablePath: string = resolveRadioChronPath()) {}
 
   /** Call a tool and return its decoded JSON payload. */
   async callTool(name: string, args: Record<string, unknown> = {}, timeoutMs = DEFAULT_TIMEOUT_MS): Promise<unknown> {
@@ -73,7 +73,7 @@ export class BeaconTrailClient {
 
     const text = result?.content?.[0]?.text ?? '';
     if (result?.isError) {
-      throw new Error(text || `beacontrail tool ${name} failed`);
+      throw new Error(text || `radiochron tool ${name} failed`);
     }
 
     return text ? (JSON.parse(text) as unknown) : null;
@@ -83,7 +83,7 @@ export class BeaconTrailClient {
   dispose(): void {
     for (const [, request] of this.pending) {
       clearTimeout(request.timer);
-      request.reject(new Error('beacontrail client disposed'));
+      request.reject(new Error('radiochron client disposed'));
     }
     this.pending.clear();
 
@@ -103,13 +103,13 @@ export class BeaconTrailClient {
 
       child.stdout.setEncoding('utf8');
       child.stdout.on('data', (chunk: string) => this.consume(chunk));
-      child.on('exit', (code) => this.failAll(new Error(`beacontrail exited with code ${code}`)));
+      child.on('exit', (code) => this.failAll(new Error(`radiochron exited with code ${code}`)));
       child.on('error', (error: Error) => this.failAll(error));
 
       await this.request('initialize', {
         protocolVersion: PROTOCOL_VERSION,
         capabilities: {},
-        clientInfo: { name: 'beacontrail-electron', version: '0.1.0' }
+        clientInfo: { name: 'radiochron-electron', version: '0.1.0' }
       });
 
       this.send({ jsonrpc: '2.0', method: 'notifications/initialized' });
@@ -130,7 +130,7 @@ export class BeaconTrailClient {
     return new Promise<unknown>((resolvePromise, rejectPromise) => {
       const timer = setTimeout(() => {
         this.pending.delete(id);
-        rejectPromise(new Error(`beacontrail ${method} timed out after ${timeoutMs}ms`));
+        rejectPromise(new Error(`radiochron ${method} timed out after ${timeoutMs}ms`));
       }, timeoutMs);
 
       this.pending.set(id, { resolve: resolvePromise, reject: rejectPromise, timer });
@@ -179,7 +179,7 @@ export class BeaconTrailClient {
     this.pending.delete(message.id);
 
     if (message.error) {
-      request.reject(new Error(`beacontrail error ${message.error.code}: ${message.error.message}`));
+      request.reject(new Error(`radiochron error ${message.error.code}: ${message.error.message}`));
       return;
     }
 
@@ -197,10 +197,10 @@ export class BeaconTrailClient {
   }
 }
 
-let shared: BeaconTrailClient | null = null;
+let shared: RadioChronClient | null = null;
 
 /** Process-wide client, created on first use. */
-export function getBeaconTrailClient(): BeaconTrailClient {
-  shared ??= new BeaconTrailClient();
+export function getRadioChronClient(): RadioChronClient {
+  shared ??= new RadioChronClient();
   return shared;
 }

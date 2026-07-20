@@ -1,17 +1,17 @@
 {
-  "name": "beacontrail-electron",
+  "name": "radiochron-electron",
   "version": "0.1.0",
   "private": true,
-  "description": "Desktop UI for BeaconTrail — local-first Windows Wi-Fi diagnostics, evidence timelines, and network inventory",
+  "description": "Desktop UI for RadioChron — local-first Windows Wi-Fi diagnostics, evidence timelines, and network inventory",
   "author": "Sergii Ziborov",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sergii-ziborov/beacontrail-electron.git"
+    "url": "git+https://github.com/sergii-ziborov/radiochron-electron.git"
   },
-  "homepage": "https://github.com/sergii-ziborov/beacontrail-electron#readme",
+  "homepage": "https://github.com/sergii-ziborov/radiochron-electron#readme",
   "bugs": {
-    "url": "https://github.com/sergii-ziborov/beacontrail-electron/issues"
+    "url": "https://github.com/sergii-ziborov/radiochron-electron/issues"
   },
   "keywords": [
     "electron",

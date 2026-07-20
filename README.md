@@ -1,9 +1,9 @@
-# BeaconTrail Desktop
+# RadioChron Desktop
 
 Local-first Windows desktop diagnostics for recording Wi-Fi state, comparing runs, and turning transient network problems into evidence that can be attached to a support ticket.
 
 This is the desktop UI. The radio engine lives in
-**[BeaconTrail](https://github.com/sergii-ziborov/beacontrail)** — a pure-Rust
+**[RadioChron](https://github.com/sergii-ziborov/radiochron)** — a pure-Rust
 MCP server this app drives over stdio, exactly as an AI assistant would. One
 engine, one source of truth, no duplicated collector logic.
 
@@ -37,9 +37,9 @@ Advanced controls can read a saved Windows Wi-Fi profile secret on explicit requ
 - Windows 11 (the collectors depend on Windows WLAN, Event Log, PowerShell, and networking APIs).
 - Node.js 22.12 or newer; Node.js 24 is recommended.
 - npm.
-- The [BeaconTrail](https://github.com/sergii-ziborov/beacontrail) server binary
+- The [RadioChron](https://github.com/sergii-ziborov/radiochron) server binary
   for nearby-AP scanning. Build it with `cargo build --release` and either put it
-  on `PATH` or point `BEACONTRAIL_MCP` at it; a sibling `../beacontrail`
+  on `PATH` or point `RADIOCHRON_MCP` at it; a sibling `../radiochron`
   checkout is found automatically.
 
 Scanning no longer compiles C# at runtime. The previous implementation reached
@@ -79,7 +79,7 @@ npm run baseline:report
 ```text
 Windows WLAN / Event Log / IP / neighbor sources
                     |
-      BeaconTrail (Rust MCP server)  +  platform adapters
+      RadioChron (Rust MCP server)  +  platform adapters
                     |
      collectors, history, analysis, SQLite
                     |
@@ -91,14 +91,14 @@ Windows WLAN / Event Log / IP / neighbor sources
 ```
 
 Nearby-AP scanning and the native BSS list (real dBm, channel frequencies,
-802.11 capability flags) come from the BeaconTrail MCP server. The app locates
-the binary via `BEACONTRAIL_MCP`, then a packaged copy, then a sibling
-`../beacontrail` development checkout, then `PATH`.
+802.11 capability flags) come from the RadioChron MCP server. The app locates
+the binary via `RADIOCHRON_MCP`, then a packaged copy, then a sibling
+`../radiochron` development checkout, then `PATH`.
 
 Source layout:
 
-- `src/mcp/` — MCP stdio client for the BeaconTrail server.
-- `src/platform/windows/` — Windows commands and the BeaconTrail bridge.
+- `src/mcp/` — MCP stdio client for the RadioChron server.
+- `src/platform/windows/` — Windows commands and the RadioChron bridge.
 - `src/collector/` — collection, persistence, inventory, comparison, and evidence logic.
 - `src/analysis/` — timeline and reconnect symptom analysis.
 - `src/main/` and `src/preload/` — Electron security boundary and IPC bridge.

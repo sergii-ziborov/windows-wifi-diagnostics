@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { mergeNativeBssDetails } from '../src/collector/nativeBss';
 import type { EventContext, WindowsNativeBssEntry, WindowsWifiNetwork } from '../src/collector/types';
-import { mapBeaconTrailNetworks } from '../src/platform/windows/beacontrail';
+import { mapRadioChronNetworks } from '../src/platform/windows/radiochron';
 
 const context: EventContext = {
   runId: 'test-run',
   hostId: 'test-host'
 };
 
-describe('mapBeaconTrailNetworks', () => {
+describe('mapRadioChronNetworks', () => {
   it('maps a full-detail wifi_networks payload onto the BSS shape', () => {
-    const entries = mapBeaconTrailNetworks({
+    const entries = mapRadioChronNetworks({
       count: 1,
       refreshed: true,
       networks: [
@@ -72,13 +72,13 @@ describe('mapBeaconTrailNetworks', () => {
   });
 
   it('survives an empty, malformed or summary-shaped payload', () => {
-    expect(mapBeaconTrailNetworks(null)).toEqual([]);
-    expect(mapBeaconTrailNetworks({ count: 0, networks: [] })).toEqual([]);
-    expect(mapBeaconTrailNetworks({} as never)).toEqual([]);
+    expect(mapRadioChronNetworks(null)).toEqual([]);
+    expect(mapRadioChronNetworks({ count: 0, networks: [] })).toEqual([]);
+    expect(mapRadioChronNetworks({} as never)).toEqual([]);
   });
 
   it('defaults missing information elements instead of throwing', () => {
-    const [entry] = mapBeaconTrailNetworks({
+    const [entry] = mapRadioChronNetworks({
       networks: [{ bssid: 'aa:bb:cc:dd:ee:ff' }]
     });
 
