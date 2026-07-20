@@ -10,6 +10,7 @@ import {
   type ReactNode,
   type WheelEvent
 } from 'react';
+import { createPortal } from 'react-dom';
 import accessPointVisualUrl from './assets/device-visuals/access-point.svg';
 import hiddenNetworkVisualUrl from './assets/device-visuals/hidden-network.svg';
 import hotspotVisualUrl from './assets/device-visuals/hotspot.svg';
@@ -71,6 +72,13 @@ import type {
   WindowsWifiSnapshot,
   WindowsWifiEvent
 } from '../../collector/types';
+
+// Render modal overlays through a portal to document.body so their fixed-position
+// backdrops escape ancestor stacking contexts (panels use clip-path, which both
+// creates a stacking context and acts as the containing block for fixed children).
+function ModalPortal({ children }: { children: ReactNode }) {
+  return createPortal(children, document.body);
+}
 
 interface BaselineViewState {
   status: BaselineStatus | null;
@@ -3323,6 +3331,7 @@ function ScanLocationSettingsModal({
   }, [onClose]);
 
   return (
+    <ModalPortal>
     <div className="device-modal-backdrop scan-location-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="device-modal scan-location-modal"
@@ -3405,6 +3414,7 @@ function ScanLocationSettingsModal({
         </div>
       </section>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -4584,6 +4594,7 @@ function LocalDeviceModal({
   }, [onClose]);
 
   return (
+    <ModalPortal>
     <div className="device-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="device-modal local-device-modal"
@@ -4622,6 +4633,7 @@ function LocalDeviceModal({
         </dl>
       </section>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -4826,6 +4838,7 @@ function DeviceModal({
   }, [onClose]);
 
   return (
+    <ModalPortal>
     <div className="device-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="device-modal"
@@ -4931,6 +4944,7 @@ function DeviceModal({
         ) : null}
       </section>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -5231,6 +5245,7 @@ function VulnerabilityScanPlanModal({
   };
 
   return (
+    <ModalPortal>
     <div className="device-modal-backdrop insight-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="device-modal vulnerability-plan-modal"
@@ -5327,6 +5342,7 @@ function VulnerabilityScanPlanModal({
         </div>
       </section>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -5361,6 +5377,7 @@ function DeviceInsightModal({
   }, [onClose]);
 
   return (
+    <ModalPortal>
     <div className="device-modal-backdrop insight-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="device-modal insight-modal"
@@ -5392,6 +5409,7 @@ function DeviceInsightModal({
         {kind === 'radio' ? <RadioInsight network={network} /> : null}
       </section>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -6205,6 +6223,7 @@ function AiResearchModal({
   const rawDetails = runState.result?.raw_output ?? displayedResult?.raw_output ?? null;
 
   return (
+    <ModalPortal>
     <div className="device-modal-backdrop insight-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="device-modal ai-research-modal"
@@ -6373,6 +6392,7 @@ function AiResearchModal({
         ) : null}
       </section>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -6454,6 +6474,7 @@ function AiThreatReviewModal({
   const review = runState.result?.review ?? null;
 
   return (
+    <ModalPortal>
     <div className="device-modal-backdrop insight-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="device-modal ai-threat-modal"
@@ -6543,6 +6564,7 @@ function AiThreatReviewModal({
         ) : null}
       </section>
     </div>
+    </ModalPortal>
   );
 }
 
@@ -7948,6 +7970,7 @@ function AlertModal({
   }, [onClose]);
 
   return (
+    <ModalPortal>
     <div className="device-modal-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="device-modal alert-modal"
@@ -8030,6 +8053,7 @@ function AlertModal({
         ) : null}
       </section>
     </div>
+    </ModalPortal>
   );
 }
 
