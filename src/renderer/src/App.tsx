@@ -927,6 +927,9 @@ export function App() {
   const [networkHistory, setNetworkHistory] = useState<NetworkHistorySnapshot[]>(loadPersistedNetworkHistory);
   const [deviceHistory, setDeviceHistory] = useState<DeviceHistoryResult | null>(null);
   const [deviceHistoryWindowHours] = useState(24);
+  // "New" window is evaluated in the renderer against each record's first_seen_utc so sub-hour
+  // windows (15/30 min) work; the backend floors newWindowHours to whole hours (min 1h).
+  const [deviceHistoryNewWindowMinutes, setDeviceHistoryNewWindowMinutes] = useState(15);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const [networkIntelFilter, setNetworkIntelFilter] = useState<NetworkIntelFilter>(ALL_NETWORK_INTEL_FILTER);
   const [currentConnectionInsight, setCurrentConnectionInsight] = useState<DeviceInsightKind | null>(null);
@@ -1864,16 +1867,14 @@ export function App() {
   );
   const rememberedSourceItems = activeHistorySnapshot?.items ?? rememberedNetworks;
   const rememberedViewNowMs = activeHistorySnapshot ? Date.parse(activeHistorySnapshot.tsUtc) : nowMs;
-  const rememberedNetworkItems = useMemo(
-    () => annotateRememberedNetworkItemsWithHistory(
-      deriveRememberedNetworkItems(
-        rememberedSourceItems,
-        Number.isFinite(rememberedViewNowMs) ? rememberedViewNowMs : nowMs
-      ),
-      deviceHistoryByBssid
-    ),
-    [deviceHistoryByBssid, nowMs, rememberedSourceItems, rememberedViewNowMs]
-  );
+  const rememberedNetworkItems = useMemo(() => {
+    const effectiveNowMs = Number.isFinite(rememberedViewNowMs) ? rememberedViewNowMs : nowMs;
+    return annotateRememberedNetworkItemsWithHistory(
+      deriveRememberedNetworkItems(rememberedSourceItems, effectiveNowMs),
+      deviceHistoryByBssid,
+      { nowMs: effectiveNowMs, windowMs: deviceHistoryNewWindowMinutes * 60 * 1000 }
+    );
+  }, [deviceHistoryByBssid, deviceHistoryNewWindowMinutes, nowMs, rememberedSourceItems, rememberedViewNowMs]);
   const rememberedNetworkIntelSummary = useMemo(
     () => summarizeNetworksForIntel(rememberedNetworkItems.map((item) => item.network)),
     [rememberedNetworkItems]
@@ -2347,10 +2348,26 @@ export function App() {
         <article className="panel">
           <div className="panel-heading">
             <h2>{selectedScanLocation ? `APs at ${formatScanLocationLabel(selectedScanLocation)}` : 'Nearby APs'}</h2>
-            <span>
-              {countUniqueNetworkSsids(selectedLocationItems)} SSIDs / {selectedLocationItems.length} BSSIDs
-              {` | ${historyViewLabel}`}
-            </span>
+            <div className="nearby-heading-meta">
+              <span>
+                {countUniqueNetworkSsids(selectedLocationItems)} SSIDs / {selectedLocationItems.length} BSSIDs
+                {` | ${historyViewLabel}`}
+              </span>
+              <label className="new-window-control">
+                <span>New =</span>
+                <select
+                  value={deviceHistoryNewWindowMinutes}
+                  onChange={(event) => setDeviceHistoryNewWindowMinutes(Number(event.target.value))}
+                  aria-label="New device window"
+                >
+                  <option value={15}>15 min</option>
+                  <option value={30}>30 min</option>
+                  <option value={60}>1 hour</option>
+                  <option value={360}>6 hours</option>
+                  <option value={1440}>24 hours</option>
+                </select>
+              </label>
+            </div>
           </div>
           <NetworkList
             items={filteredSelectedLocationItems}
@@ -4063,7 +4080,6 @@ function LocationRfMap({
                       <img src={visual.image} alt={visual.alt} />
                     </span>
                     <SignalBars percent={item.network.signal_percent} />
-                    {isNewDevice ? <span className="map-node-new-badge">NEW</span> : null}
                   </span>
                   <span className="map-node-label">
                     <strong>{formatNetworkSsidLabel(item.network)}</strong>
@@ -4117,7 +4133,7 @@ function LocationRfMap({
                   >
                     <strong>{formatNetworkSsidLabel(item.network)}</strong>
                     <small>
-                      {isNewDevice ? 'NEW | ' : ''}{vendor} | {formatVulnerabilityBadge(item.network.vulnerability_intel)}
+                      {vendor} | {formatVulnerabilityBadge(item.network.vulnerability_intel)}
                     </small>
                     <small>
                       {visual.label} | {valueOrUnknown(item.network.bssid)} | {formatPercent(item.network.signal_percent)} | {formatMapLastVisible(item)}
@@ -6764,7 +6780,35 @@ function NetworkList({
   onVulnerabilityLookupRecorded: LeakLookupRecordAppender;
 }) {
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
+  const [searchText, setSearchText] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 15;
   const selectedItem = selectedItemKey ? items.find((item) => item.key === selectedItemKey) ?? null : null;
+
+  const query = searchText.trim().toLowerCase();
+  const filteredItems = useMemo(() => {
+    if (!query) {
+      return items;
+    }
+    return items.filter((item) => {
+      const network = item.network;
+      const haystack = [
+        formatNetworkSsidLabel(network),
+        network.ssid,
+        network.bssid,
+        formatMacHint(network)
+      ]
+        .filter((value): value is string => Boolean(value))
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [items, query]);
+
+  // Reset to the first page whenever the search text or the upstream filtered item set changes.
+  useEffect(() => {
+    setPage(1);
+  }, [query, items]);
 
   if (!source?.available) {
     return (
@@ -6779,57 +6823,130 @@ function NetworkList({
     return <p className="muted compact">No nearby APs returned by Windows.</p>;
   }
 
+  const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
+  const safePage = Math.min(Math.max(1, page), totalPages);
+  const pageItems = filteredItems.slice((safePage - 1) * pageSize, safePage * pageSize);
+
   return (
     <>
-      <ol id="nearby-ap-list" className="network-list anchor-target">
-        {items.map((item) => {
-          const network = item.network;
-          const visual = networkDeviceVisual(network);
-          const isNewDevice = isRememberedNetworkNewInInventory(item);
+      <div id="nearby-ap-list" className="nearby-table-controls anchor-target">
+        <input
+          type="search"
+          className="nearby-table-search"
+          value={searchText}
+          onChange={(event) => setSearchText(event.target.value)}
+          placeholder="Search SSID, BSSID, or vendor"
+          aria-label="Search nearby APs"
+        />
+        <span className="nearby-table-count">
+          {filteredItems.length} of {items.length} shown
+        </span>
+      </div>
+      <div className="nearby-table-wrap">
+        <table className="nearby-table">
+          <thead>
+            <tr>
+              <th scope="col">Device</th>
+              <th scope="col">SSID</th>
+              <th scope="col">BSSID</th>
+              <th scope="col">Signal</th>
+              <th scope="col">Ch</th>
+              <th scope="col">Security</th>
+              <th scope="col">Exposure</th>
+              <th scope="col">Band / Auth</th>
+            </tr>
+          </thead>
+          <tbody>
+            {pageItems.length === 0 ? (
+              <tr className="nearby-row-empty">
+                <td colSpan={8}>No APs match that search.</td>
+              </tr>
+            ) : (
+              pageItems.map((item) => {
+                const network = item.network;
+                const visual = networkDeviceVisual(network);
+                const isNewDevice = isRememberedNetworkNewInInventory(item);
+                const label = formatNetworkSsidLabel(network);
 
-          return (
-            <li key={item.key} className={isNewDevice ? 'network-item-new' : ''}>
-              <button
-                type="button"
-                className="network-row"
-                onClick={() => setSelectedItemKey(item.key)}
-                title={`Open ${formatNetworkSsidLabel(network)} details`}
-              >
-                <span className={`network-visual network-visual-${visual.kind}`} title={visual.alt}>
-                  <img src={visual.image} alt={visual.alt} />
-                  <small>{visual.label}</small>
-                </span>
-                <div>
-                  <strong>
-                    {formatNetworkSsidLabel(network)}
-                    {isNewDevice ? <span className="network-new-pill">new</span> : null}
-                  </strong>
-                  <small>{valueOrUnknown(network.bssid)}</small>
-                  <small className="network-device-hint">{formatMacHint(network)}</small>
-                </div>
-                <span>{formatPercent(network.signal_percent)}</span>
-                <span>ch {valueOrUnknown(network.channel)}</span>
-                <span
-                  className={`network-security-pill security-risk-${network.security_assessment?.danger_level ?? 'medium'}`}
-                  title={network.security_assessment?.summary ?? 'Security posture unknown'}
-                >
-                  {formatNetworkSecurityBadge(network)}
-                </span>
-                <span
-                  className={`network-vulnerability-pill vulnerability-${network.vulnerability_intel?.exposure_level ?? 'none'}`}
-                  title={network.vulnerability_intel?.summary ?? 'No passive exposure signals'}
-                >
-                  {formatVulnerabilityBadge(network.vulnerability_intel)}
-                </span>
-                <small>
-                  {valueOrUnknown(network.band)} | {valueOrUnknown(network.authentication)} /{' '}
-                  {valueOrUnknown(network.encryption)}
-                </small>
-              </button>
-            </li>
-          );
-        })}
-      </ol>
+                return (
+                  <tr
+                    key={item.key}
+                    className={`nearby-row ${isNewDevice ? 'nearby-row-new' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Open ${label} details`}
+                    title={`Open ${label} details`}
+                    onClick={() => setSelectedItemKey(item.key)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedItemKey(item.key);
+                      }
+                    }}
+                  >
+                    <td>
+                      <span className={`network-visual network-visual-${visual.kind}`} title={visual.alt}>
+                        <img src={visual.image} alt={visual.alt} />
+                        <small>{visual.label}</small>
+                      </span>
+                    </td>
+                    <td>
+                      <strong className="nearby-ssid">{label}</strong>
+                      <small className="network-device-hint">{formatMacHint(network)}</small>
+                    </td>
+                    <td className="nearby-bssid">{valueOrUnknown(network.bssid)}</td>
+                    <td>{formatPercent(network.signal_percent)}</td>
+                    <td>ch {valueOrUnknown(network.channel)}</td>
+                    <td>
+                      <span
+                        className={`network-security-pill security-risk-${network.security_assessment?.danger_level ?? 'medium'}`}
+                        title={network.security_assessment?.summary ?? 'Security posture unknown'}
+                      >
+                        {formatNetworkSecurityBadge(network)}
+                      </span>
+                    </td>
+                    <td>
+                      <span
+                        className={`network-vulnerability-pill vulnerability-${network.vulnerability_intel?.exposure_level ?? 'none'}`}
+                        title={network.vulnerability_intel?.summary ?? 'No passive exposure signals'}
+                      >
+                        {formatVulnerabilityBadge(network.vulnerability_intel)}
+                      </span>
+                    </td>
+                    <td className="nearby-bandauth">
+                      {valueOrUnknown(network.band)} | {valueOrUnknown(network.authentication)} /{' '}
+                      {valueOrUnknown(network.encryption)}
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+      {totalPages > 1 ? (
+        <div className="nearby-table-pager">
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            disabled={safePage <= 1}
+          >
+            Prev
+          </button>
+          <span>
+            page {safePage} of {totalPages}
+          </span>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            disabled={safePage >= totalPages}
+          >
+            Next
+          </button>
+        </div>
+      ) : null}
       {selectedItem ? (
         <DeviceModal
           item={selectedItem}
@@ -8226,7 +8343,11 @@ function buildDeviceHistoryByBssid(history: DeviceHistoryResult | null): Map<str
 
 function annotateRememberedNetworkItemsWithHistory<
   T extends RememberedNetwork & { ageSeconds: number | null; isStale: boolean }
->(items: T[], historyByBssid: Map<string, DeviceHistoryRecord>): Array<T & {
+>(
+  items: T[],
+  historyByBssid: Map<string, DeviceHistoryRecord>,
+  newWindow?: { nowMs: number; windowMs: number }
+): Array<T & {
   historyRecord: DeviceHistoryRecord | null;
   isNewInInventory: boolean;
 }> {
@@ -8235,9 +8356,27 @@ function annotateRememberedNetworkItemsWithHistory<
     return {
       ...item,
       historyRecord,
-      isNewInInventory: historyRecord?.is_new ?? false
+      isNewInInventory: computeHistoryRecordIsNew(historyRecord, newWindow)
     };
   });
+}
+
+// Newness is derived client-side from first_seen_utc so the configurable "New =" window can honor
+// sub-hour spans (15/30 min). Falls back to the backend's coarse is_new flag when no window/timestamp.
+function computeHistoryRecordIsNew(
+  historyRecord: DeviceHistoryRecord | null,
+  newWindow?: { nowMs: number; windowMs: number }
+): boolean {
+  if (!historyRecord) {
+    return false;
+  }
+  if (newWindow) {
+    const firstSeenMs = Date.parse(historyRecord.first_seen_utc);
+    if (Number.isFinite(firstSeenMs)) {
+      return newWindow.nowMs - firstSeenMs <= newWindow.windowMs;
+    }
+  }
+  return historyRecord.is_new;
 }
 
 function deviceHistoryRecordForNetwork(
