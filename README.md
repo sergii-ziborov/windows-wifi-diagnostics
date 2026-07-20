@@ -11,7 +11,7 @@ engine, one source of truth, no duplicated collector logic.
 
 ## Why it exists
 
-Intermittent Wi-Fi failures are difficult to explain after the connection recovers. Windows Wi-Fi Diagnostics collects the signals Windows already exposes, keeps a local history, highlights reconnect patterns and environmental changes, and produces a readable diagnostic record.
+Intermittent Wi-Fi failures are difficult to explain after the connection recovers. RadioChron Desktop collects the signals Windows already exposes, keeps a local history, highlights reconnect patterns and environmental changes, and produces a readable diagnostic record.
 
 The useful workflow is:
 
