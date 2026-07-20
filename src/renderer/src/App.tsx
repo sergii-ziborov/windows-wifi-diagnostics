@@ -2321,6 +2321,8 @@ export function App() {
           nowMs={Number.isFinite(rememberedViewNowMs) ? rememberedViewNowMs : nowMs}
           source={networkListSource}
           onFilterChange={setNetworkIntelFilter}
+          newWindowMinutes={deviceHistoryNewWindowMinutes}
+          onNewWindowChange={setDeviceHistoryNewWindowMinutes}
           onThreatReview={() =>
             setAiThreatReviewRequest({
               scope: 'map',
@@ -3431,6 +3433,8 @@ function LocationRfMap({
   source,
   onFilterChange,
   onThreatReview,
+  newWindowMinutes,
+  onNewWindowChange,
   onIntelligenceUpdated,
   onVulnerabilityLookupUpdated,
   onVulnerabilityLookupRecorded
@@ -3447,6 +3451,8 @@ function LocationRfMap({
   source: CollectorSourceStatus | null;
   onFilterChange: (filter: NetworkIntelFilter) => void;
   onThreatReview: () => void;
+  newWindowMinutes: number;
+  onNewWindowChange: (value: number) => void;
   onIntelligenceUpdated: (network: WindowsWifiNetwork, override: DeviceIntelligenceOverride) => void;
   onVulnerabilityLookupUpdated: (network: WindowsWifiNetwork, result: DeviceVulnerabilityLookupResult) => void;
   onVulnerabilityLookupRecorded: LeakLookupRecordAppender;
@@ -3872,6 +3878,51 @@ function LocationRfMap({
         sourceReady={Boolean(source?.available)}
         onFilterChange={onFilterChange}
       />
+      <div className="map-inline-controls" aria-label="RF map filters">
+        <label className="new-window-control">
+          <span>New =</span>
+          <select
+            value={newWindowMinutes}
+            onChange={(event) => onNewWindowChange(Number(event.target.value))}
+            aria-label="New device window"
+          >
+            <option value={15}>15 min</option>
+            <option value={30}>30 min</option>
+            <option value={60}>1 hour</option>
+            <option value={360}>6 hours</option>
+            <option value={1440}>24 hours</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          className={showAllMapItems ? 'map-location-toggle map-location-toggle-active' : 'map-location-toggle'}
+          onClick={() => setShowAllMapItems((current) => !current)}
+        >
+          {showAllMapItems ? `All ${items.length}` : `Top ${Math.min(MAP_VISIBLE_ITEM_LIMIT, items.length)}`}
+        </button>
+        <label>
+          <span>{rangeSelectLabel}</span>
+          <select value={mapRangeKm} onChange={(event) => setMapRangeKm(Number(event.target.value))}>
+            <option value={0.03}>tight</option>
+            <option value={0.05}>compact</option>
+            <option value={0.08}>normal</option>
+            <option value={0.12}>wide</option>
+            <option value={0.25}>wide+</option>
+            <option value={0.5}>far</option>
+            <option value={1}>far+</option>
+          </select>
+        </label>
+        <label>
+          <span>Seen</span>
+          <select value={mapHistoryFilter} onChange={(event) => setMapHistoryFilter(event.target.value as MapHistoryFilter)}>
+            {MAP_HISTORY_FILTERS.map((filter) => (
+              <option key={filter.value} value={filter.value}>
+                {filter.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       {isFiltered || hiddenByHistoryCount > 0 ? (
         <p className="map-filter-caption">
           Showing {historyFilteredItems.length} of {summaryItems.length}: {activeFilter.label}
@@ -3890,39 +3941,6 @@ function LocationRfMap({
           onClickCapture={handleMapClickCapture}
           onClick={clearMapSelection}
         >
-          <div className="map-location-toolbar map-stage-location-toolbar" aria-label="RF map controls">
-            <div className="map-location-group">
-              <button
-                type="button"
-                className={showAllMapItems ? 'map-location-toggle map-location-toggle-active' : 'map-location-toggle'}
-                onClick={() => setShowAllMapItems((current) => !current)}
-              >
-                {showAllMapItems ? `All ${items.length}` : `Top ${Math.min(MAP_VISIBLE_ITEM_LIMIT, items.length)}`}
-              </button>
-              <label>
-                <span>{rangeSelectLabel}</span>
-                <select value={mapRangeKm} onChange={(event) => setMapRangeKm(Number(event.target.value))}>
-                  <option value={0.03}>tight</option>
-                  <option value={0.05}>compact</option>
-                  <option value={0.08}>normal</option>
-                  <option value={0.12}>wide</option>
-                  <option value={0.25}>wide+</option>
-                  <option value={0.5}>far</option>
-                  <option value={1}>far+</option>
-                </select>
-              </label>
-              <label>
-                  <span>Seen</span>
-                <select value={mapHistoryFilter} onChange={(event) => setMapHistoryFilter(event.target.value as MapHistoryFilter)}>
-                  {MAP_HISTORY_FILTERS.map((filter) => (
-                    <option key={filter.value} value={filter.value}>
-                      {filter.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          </div>
           <div className="map-toolbar map-viewport-toolbar" aria-label="Map controls">
             <button type="button" onClick={zoomOut} aria-label="Zoom out">-</button>
             <span>{Math.round(zoom * 100)}%</span>
