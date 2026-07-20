@@ -204,3 +204,14 @@ export function getRadioChronClient(): RadioChronClient {
   shared ??= new RadioChronClient();
   return shared;
 }
+
+/**
+ * Tear down the process-wide client if one was created. The server child is a
+ * long-lived process with piped stdio, so a one-shot caller (the CLI) must
+ * dispose it or Node's event loop never drains and the process hangs after its
+ * work is done. Only disposes an existing client — never spawns one to kill it.
+ */
+export function disposeRadioChronClient(): void {
+  shared?.dispose();
+  shared = null;
+}

@@ -6,6 +6,7 @@ import {
 } from '../collector/diagnosticsService';
 import { formatEvidenceReport } from '../collector/evidenceReport';
 import { getBaselineEvents, getBaselineTimeline } from '../collector/historyService';
+import { disposeRadioChronClient } from '../mcp/client';
 import { getBaselineNetworks } from '../collector/networkService';
 import { analyzeBaselineRun } from '../collector/runAnalysis';
 import { compareBaselineRuns } from '../collector/runComparison';
@@ -123,7 +124,13 @@ async function main(): Promise<void> {
   console.log(JSON.stringify(result, null, 2));
 }
 
-main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : String(error));
-  process.exitCode = 1;
-});
+main()
+  .catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  })
+  .finally(() => {
+    // Release the long-lived RadioChron server child so this one-shot process
+    // can exit instead of hanging on open stdio pipes.
+    disposeRadioChronClient();
+  });
