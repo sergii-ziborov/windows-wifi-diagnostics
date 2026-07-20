@@ -1,6 +1,11 @@
-# Windows Wi-Fi Diagnostics
+# BeaconTrail Desktop
 
 Local-first Windows desktop diagnostics for recording Wi-Fi state, comparing runs, and turning transient network problems into evidence that can be attached to a support ticket.
+
+This is the desktop UI. The radio engine lives in
+**[BeaconTrail](https://github.com/sergii-ziborov/beacontrail)** — a pure-Rust
+MCP server this app drives over stdio, exactly as an AI assistant would. One
+engine, one source of truth, no duplicated collector logic.
 
 > Open-source portfolio beta. This is not a packet sniffer, Wi-Fi geolocation system, or vulnerability scanner.
 
@@ -32,6 +37,15 @@ Advanced controls can read a saved Windows Wi-Fi profile secret on explicit requ
 - Windows 11 (the collectors depend on Windows WLAN, Event Log, PowerShell, and networking APIs).
 - Node.js 22.12 or newer; Node.js 24 is recommended.
 - npm.
+- The [BeaconTrail](https://github.com/sergii-ziborov/beacontrail) server binary
+  for nearby-AP scanning. Build it with `cargo build --release` and either put it
+  on `PATH` or point `BEACONTRAIL_MCP` at it; a sibling `../beacontrail`
+  checkout is found automatically.
+
+Scanning no longer compiles C# at runtime. The previous implementation reached
+`wlanapi.dll` by emitting a C# shim through PowerShell `Add-Type`, which needed
+the .NET CSC compiler on every call and tripped application-control policies on
+managed machines. That path is gone.
 
 ## Run from source
 
@@ -65,7 +79,7 @@ npm run baseline:report
 ```text
 Windows WLAN / Event Log / IP / neighbor sources
                     |
-             platform adapters
+      BeaconTrail (Rust MCP server)  +  platform adapters
                     |
      collectors, history, analysis, SQLite
                     |
@@ -76,9 +90,15 @@ Windows WLAN / Event Log / IP / neighbor sources
              React renderer
 ```
 
+Nearby-AP scanning and the native BSS list (real dBm, channel frequencies,
+802.11 capability flags) come from the BeaconTrail MCP server. The app locates
+the binary via `BEACONTRAIL_MCP`, then a packaged copy, then a sibling
+`../beacontrail` development checkout, then `PATH`.
+
 Source layout:
 
-- `src/platform/windows/` — Windows commands and native WLAN collectors.
+- `src/mcp/` — MCP stdio client for the BeaconTrail server.
+- `src/platform/windows/` — Windows commands and the BeaconTrail bridge.
 - `src/collector/` — collection, persistence, inventory, comparison, and evidence logic.
 - `src/analysis/` — timeline and reconnect symptom analysis.
 - `src/main/` and `src/preload/` — Electron security boundary and IPC bridge.

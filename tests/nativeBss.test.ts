@@ -1,61 +1,67 @@
 import { describe, expect, it } from 'vitest';
 import { mergeNativeBssDetails } from '../src/collector/nativeBss';
 import type { EventContext, WindowsNativeBssEntry, WindowsWifiNetwork } from '../src/collector/types';
-import { parseNativeWifiBssEntries } from '../src/platform/windows/nativeWifiBss';
+import { mapBeaconTrailNetworks } from '../src/platform/windows/beacontrail';
 
 const context: EventContext = {
   runId: 'test-run',
   hostId: 'test-host'
 };
 
-describe('parseNativeWifiBssEntries', () => {
-  it('normalizes native WLAN BSS records', () => {
-    const entries = parseNativeWifiBssEntries(JSON.stringify([
-      {
-        InterfaceGuid: 'guid',
-        InterfaceDescription: 'Intel(R) Wi-Fi 6E AX211 160MHz',
-        Ssid: 'Test Network',
-        Bssid: '48-4A-E9-00-00-01',
-        BssType: 'infrastructure',
-        PhyType: 'he',
-        RssiDbm: -52,
-        LinkQuality: 88,
-        CenterFrequencyKHz: 5180000,
-        BeaconPeriodTu: 100,
-        InRegDomain: true,
-        CapabilityInformation: 1041,
-        Timestamp: '123456',
-        HostTimestamp: '2026-06-03T12:00:00.0000000Z',
-        RatesMbps: [6, 12, 24],
-        InformationElements: {
-          ByteLength: 128,
-          ElementCount: 8,
-          ElementIds: [0, 1, 48, 255],
-          Names: ['SSID', 'RSN', 'Extension 35'],
-          ExtensionIds: [35],
-          VendorOuis: ['00:50:f2'],
-          HasRsn: true,
-          HasWpa: false,
-          HasBssLoad: false,
-          HasCountry: true,
-          HasHt: true,
-          HasVht: true,
-          HasHe: true,
-          HasEht: false
+describe('mapBeaconTrailNetworks', () => {
+  it('maps a full-detail wifi_networks payload onto the BSS shape', () => {
+    const entries = mapBeaconTrailNetworks({
+      count: 1,
+      refreshed: true,
+      networks: [
+        {
+          interface_guid: '4b763cb5-55ae-452c-a5e0-0f737af605b1',
+          ssid: 'Test Network',
+          bssid: '48-4A-E9-00-00-01',
+          bss_type: 'infrastructure',
+          phy_type: 'he',
+          rssi_dbm: -52,
+          link_quality: 88,
+          center_frequency_khz: 5180000,
+          beacon_period_tu: 100,
+          in_reg_domain: true,
+          capability_information: 1041,
+          timestamp: 123456,
+          host_timestamp: 133000000000000000,
+          rates_mbps: [6, 12, 24],
+          information_elements: {
+            byte_length: 128,
+            element_count: 8,
+            element_ids: [0, 1, 48, 255],
+            names: ['SSID', 'RSN', 'Extension 35'],
+            extension_ids: [35],
+            vendor_ouis: ['00:50:f2'],
+            has_rsn: true,
+            has_wpa: false,
+            has_bss_load: false,
+            has_country: true,
+            has_ht: true,
+            has_vht: true,
+            has_he: true,
+            has_eht: false
+          }
         }
-      }
-    ]));
+      ]
+    });
 
     expect(entries).toHaveLength(1);
     expect(entries[0]).toMatchObject({
-      interface_guid: 'guid',
+      interface_guid: '4b763cb5-55ae-452c-a5e0-0f737af605b1',
       ssid: 'Test Network',
+      // Dash-separated MACs are normalized the same way the old parser did.
       bssid: '48:4a:e9:00:00:01',
       native_bss: {
         phy_type: 'he',
         rssi_dbm: -52,
         link_quality: 88,
         center_frequency_khz: 5180000,
+        // The server reports numeric timestamps; the record carries strings.
+        timestamp: '123456',
         information_elements: {
           has_rsn: true,
           has_he: true,
@@ -63,6 +69,26 @@ describe('parseNativeWifiBssEntries', () => {
         }
       }
     });
+  });
+
+  it('survives an empty, malformed or summary-shaped payload', () => {
+    expect(mapBeaconTrailNetworks(null)).toEqual([]);
+    expect(mapBeaconTrailNetworks({ count: 0, networks: [] })).toEqual([]);
+    expect(mapBeaconTrailNetworks({} as never)).toEqual([]);
+  });
+
+  it('defaults missing information elements instead of throwing', () => {
+    const [entry] = mapBeaconTrailNetworks({
+      networks: [{ bssid: 'aa:bb:cc:dd:ee:ff' }]
+    });
+
+    expect(entry.native_bss.information_elements).toMatchObject({
+      byte_length: 0,
+      element_count: 0,
+      has_rsn: false,
+      element_ids: []
+    });
+    expect(entry.native_bss.rssi_dbm).toBeNull();
   });
 });
 

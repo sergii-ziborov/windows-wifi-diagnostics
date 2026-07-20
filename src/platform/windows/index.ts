@@ -7,8 +7,10 @@ import type {
   WindowsWifiSnapshot
 } from '../../collector/types';
 import { buildNetIpConfigurationScript, enrichSnapshotsWithIpConfiguration } from './ipConfig';
-import { getNativeWifiBssEntries } from './nativeWifiBss';
-import { requestNativeWifiScan } from './nativeWifiScan';
+import {
+  getNearbyWifiBssEntries as getBeaconTrailBssEntries,
+  requestNearbyWifiScan as requestBeaconTrailScan
+} from './beacontrail';
 import { parseNetshWlanInterfaces, parseNetshWlanNetworks } from './netsh';
 import { runPowerShell } from './powershell';
 import { buildWlanEventsScript, parseWlanAutoConfigEvents, WLAN_AUTOCONFIG_LOG } from './wlanEvents';
@@ -61,11 +63,11 @@ export function createWindowsPlatformAdapter(): BaselinePlatformAdapter {
     },
 
     async requestNearbyWifiScan(): Promise<CollectorSourceStatus> {
-      return requestNativeWifiScan();
+      return requestBeaconTrailScan();
     },
 
     async getNearbyWifiBssEntries(context: EventContext) {
-      return getNativeWifiBssEntries(context);
+      return getBeaconTrailBssEntries(context);
     },
 
     async getNearbyWifiNetworks(context: EventContext): Promise<WindowsWifiNetwork[]> {
