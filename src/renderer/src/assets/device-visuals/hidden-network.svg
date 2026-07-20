@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Hidden network">
-  <rect width="96" height="96" rx="18" fill="#eef2f3"/>
-  <circle cx="48" cy="48" r="27" fill="#59646b"/>
-  <path d="M31 49c9-12 25-12 34 0" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
-  <path d="M39 58c5-6 13-6 18 0" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round"/>
-  <circle cx="48" cy="67" r="4" fill="#ffffff"/>
-  <path d="M27 69l42-42" stroke="#f07b61" stroke-width="7" stroke-linecap="round"/>
+  <path d="M4 4 H92 V76 L76 92 H4 Z" fill="#14140E" stroke="#FCEE0A" stroke-opacity=".35" stroke-width="2"/>
+  <path d="M34 62 A14 14 0 0 1 62 62" fill="none" stroke="#FCEE0A" stroke-width="5" stroke-linecap="square" stroke-dasharray="7 7"/>
+  <path d="M25 58 A23 23 0 0 1 71 58" fill="none" stroke="#8f8b6d" stroke-width="4" stroke-linecap="square" stroke-dasharray="6 8"/>
+  <rect x="44" y="64" width="8" height="8" fill="#FCEE0A"/>
+  <path d="M28 78 L68 22" stroke="#FCEE0A" stroke-width="5" stroke-linecap="square"/>
 </svg>

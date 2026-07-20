@@ -1,10 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Mobile hotspot">
-  <rect width="96" height="96" rx="18" fill="#eef5ff"/>
-  <rect x="31" y="17" width="34" height="62" rx="10" fill="#31566d"/>
-  <rect x="36" y="25" width="24" height="42" rx="4" fill="#ffffff"/>
-  <circle cx="48" cy="72" r="3" fill="#ffffff"/>
-  <path d="M24 35c-7 9-7 21 0 30" fill="none" stroke="#3e8790" stroke-width="5" stroke-linecap="round"/>
-  <path d="M76 35c7 9 7 21 0 30" fill="none" stroke="#3e8790" stroke-width="5" stroke-linecap="round"/>
-  <path d="M41 45c5-5 13-5 18 0" fill="none" stroke="#31566d" stroke-width="4" stroke-linecap="round"/>
-  <circle cx="50" cy="53" r="3" fill="#31566d"/>
+  <path d="M4 4 H92 V76 L76 92 H4 Z" fill="#14140E" stroke="#FCEE0A" stroke-opacity=".35" stroke-width="2"/>
+  <rect x="36" y="36" width="24" height="38" fill="none" stroke="#FCEE0A" stroke-width="5"/>
+  <path d="M42 66 H54" stroke="#8f8b6d" stroke-width="4" stroke-linecap="square"/>
+  <path d="M38 30 A10 10 0 0 1 58 30" fill="none" stroke="#FCEE0A" stroke-width="5" stroke-linecap="square"/>
+  <path d="M31 24 A17 17 0 0 1 65 24" fill="none" stroke="#8f8b6d" stroke-width="4" stroke-linecap="square"/>
 </svg>

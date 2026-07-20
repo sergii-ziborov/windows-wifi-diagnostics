@@ -10021,14 +10021,17 @@ function mapRingStyle(
   if (viewportSize.width <= 0 || viewportSize.height <= 0) {
     return {
       width: `${size}%`,
-      height: `${size * 0.72}%`
+      height: `${size}%`
     };
   }
 
+  // Circular radar rings: node distances are laid out against the viewport's
+  // min dimension (see mapMetricPointToViewport), so a circle of this diameter
+  // matches the metric space exactly.
   const sizePx = Math.round(Math.min(viewportSize.width, viewportSize.height) * (size / 100));
   return {
-    width: `${Math.round(sizePx * 1.45)}px`,
-    height: `${Math.round(sizePx * 0.86)}px`
+    width: `${sizePx}px`,
+    height: `${sizePx}px`
   };
 }
 

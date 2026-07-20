@@ -21,23 +21,34 @@ html {
 
 .app-shell {
   min-height: 100vh;
-  padding: 18px 30px 28px;
+  padding: 10px 24px 20px;
 }
 
+/* Sticky command bar: content scrolls beneath it on the page scroller (body). */
 .header-band {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(252, 238, 10, 0.26);
+  gap: 12px;
+  margin: -10px -24px 0;
+  padding: 6px 24px;
+  border-bottom: 1px solid rgba(252, 238, 10, 0.35);
+  background-color: #0d0d08;
+  background-image: repeating-linear-gradient(
+    0deg,
+    rgba(252, 238, 10, 0.035) 0 1px,
+    transparent 1px 4px
+  );
 }
 
 .header-main {
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
   flex: 1 1 auto;
 }
 
@@ -49,16 +60,16 @@ p {
 
 h1 {
   margin-bottom: 0;
-  font-size: 24px;
+  font-size: 1.3rem;
   line-height: 1.12;
 }
 
 h2 {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 h3 {
-  margin: 0 0 12px;
+  margin: 0 0 8px;
   font-size: 14px;
 }
 
@@ -105,11 +116,11 @@ h3 {
 
 .status-pill {
   min-width: 108px;
-  height: 32px;
+  height: 28px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 12px;
+  padding: 5px 12px;
   border: 1px solid rgba(252, 238, 10, 0.42);
   border-radius: 0;
   background: #171712;
@@ -122,12 +133,12 @@ h3 {
 .secondary-button,
 .cancel-button,
 .danger-button {
-  min-width: 96px;
-  height: 32px;
+  min-width: 88px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 8px 14px;
+  padding: 5px 12px;
   border-radius: 0;
   font: inherit;
   font-size: 13px;
@@ -172,7 +183,7 @@ h3 {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex: 1 1 auto;
   max-width: 760px;
   margin-top: 0;
@@ -185,13 +196,13 @@ h3 {
 }
 
 .app-tab {
-  min-width: 74px;
-  height: 34px;
+  min-width: 70px;
+  height: 30px;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 8px 7px;
+  padding: 4px 8px 5px;
   border: 0;
   border-bottom: 3px solid transparent;
   border-radius: 0;
@@ -221,9 +232,9 @@ h3 {
 
 .history-scrubber-shell {
   display: grid;
-  gap: 8px;
-  margin-top: 12px;
-  padding: 10px 12px;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 6px 10px;
   border: 1px solid rgba(252, 238, 10, 0.26);
   border-radius: 0;
   background: #14140e;
@@ -303,21 +314,21 @@ h3 {
 .overview-grid {
   display: grid;
   grid-template-columns: minmax(320px, 1.35fr) minmax(280px, 0.75fr) minmax(280px, 0.9fr);
-  gap: 20px;
-  padding-top: 16px;
+  gap: 13px;
+  padding-top: 10px;
 }
 
 .overview-kpi-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(140px, 1fr));
-  gap: 10px;
-  padding-top: 24px;
+  gap: 8px;
+  padding-top: 14px;
 }
 
 .overview-kpi {
   min-width: 0;
-  min-height: 82px;
-  padding: 12px;
+  min-height: 62px;
+  padding: 8px 10px;
   border: 1px solid rgba(252, 238, 10, 0.26);
   border-left: 4px solid #8f8b6d;
   border-radius: 0;
@@ -341,14 +352,14 @@ h3 {
 }
 
 .overview-kpi strong {
-  margin-top: 7px;
+  margin-top: 4px;
   color: #fcee0a;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1.05;
 }
 
 .overview-kpi small {
-  margin-top: 6px;
+  margin-top: 3px;
   color: #a29e7d;
   font-size: 12px;
   font-weight: 700;
@@ -369,16 +380,16 @@ h3 {
 .activity-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(260px, 1fr));
-  gap: 20px;
-  padding-top: 20px;
+  gap: 13px;
+  padding-top: 12px;
 }
 
 .events-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(360px, 1fr));
-  gap: 20px;
+  gap: 13px;
   align-items: start;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .single-run-grid {
@@ -388,17 +399,17 @@ h3 {
 .runs-overview-grid {
   display: grid;
   grid-template-columns: minmax(340px, 520px) minmax(420px, 1fr);
-  gap: 20px;
+  gap: 13px;
   align-items: start;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .runs-collection-panel {
   display: grid;
   grid-template-columns: minmax(360px, 1fr) auto;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .runs-collection-copy {
@@ -424,42 +435,42 @@ h3 {
 
 .network-grid {
   display: grid;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .map-grid {
   display: grid;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .reports-grid {
   display: grid;
-  gap: 14px;
-  padding-top: 20px;
+  gap: 10px;
+  padding-top: 12px;
 }
 
 .channels-grid {
   display: grid;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .diagnostics-grid {
   display: grid;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .analysis-grid {
   display: grid;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .comparison-grid {
   display: grid;
-  padding-top: 20px;
+  padding-top: 12px;
 }
 
 .panel {
-  padding: 20px;
+  padding: 13px;
   border: 1px solid rgba(252, 238, 10, 0.26);
   border-radius: 0;
   background: #171712;
@@ -470,11 +481,11 @@ h3 {
 }
 
 .activity-heading {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .activity-heading .panel-heading {
-  margin-bottom: 7px;
+  margin-bottom: 5px;
 }
 
 .activity-heading-meta {
@@ -516,7 +527,7 @@ h3 {
 }
 
 .anchor-target {
-  scroll-margin-top: 24px;
+  scroll-margin-top: 64px;
 }
 
 .jump-highlight {
@@ -570,8 +581,8 @@ h3 {
 }
 
 .banner {
-  margin: 18px 0 0;
-  padding: 12px 14px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
   border: 1px solid #6e2019;
   border-radius: 0;
   background: #2a100d;
@@ -582,8 +593,8 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  margin: 18px 0 0;
-  padding: 12px 14px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
   border: 1px solid #2f5b26;
   border-radius: 0;
   background: #12210e;
@@ -629,8 +640,8 @@ h3 {
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px 14px;
   align-items: start;
-  margin: 18px 0 0;
-  padding: 12px 14px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
   border: 1px solid #2f5b26;
   border-radius: 0;
   background: #12210e;
@@ -667,8 +678,8 @@ h3 {
 }
 
 .collect-progress-banner {
-  margin: 18px 0 0;
-  padding: 12px 14px;
+  margin: 10px 0 0;
+  padding: 8px 12px;
   border: 1px solid rgba(252, 238, 10, 0.42);
   border-radius: 0;
   background: #14140e;
@@ -716,13 +727,13 @@ h3 {
 }
 
 .status-row {
-  margin-bottom: 14px;
+  margin-bottom: 9px;
 }
 
 .status-row strong {
   min-width: 0;
   overflow-wrap: anywhere;
-  font-size: 22px;
+  font-size: 19px;
 }
 
 .state-good,
@@ -850,7 +861,7 @@ h3 {
 .fact-list {
   display: grid;
   grid-template-columns: 132px minmax(0, 1fr);
-  gap: 12px 16px;
+  gap: 8px 14px;
   margin: 0;
 }
 
@@ -869,14 +880,14 @@ h3 {
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 8px;
+  margin-bottom: 10px;
 }
 
 .metric {
   display: block;
-  min-height: 78px;
-  padding: 12px;
+  min-height: 60px;
+  padding: 8px 10px;
   border: 1px solid rgba(252, 238, 10, 0.26);
   border-radius: 0;
   background: #14140e;
@@ -1073,13 +1084,13 @@ h3 {
 }
 
 .timestamp {
-  margin: 18px 0 0;
+  margin: 12px 0 0;
   color: #8f8b6d;
   font-size: 12px;
 }
 
 .panel-heading {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .panel-heading-actions,
@@ -1129,8 +1140,8 @@ h3 {
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin: -2px 0 10px;
-  padding: 8px 10px;
+  margin: -2px 0 6px;
+  padding: 5px 8px;
   border: 1px solid rgba(252, 238, 10, 0.26);
   border-radius: 0;
   background: #14140e;
@@ -1902,7 +1913,7 @@ h3 {
 .map-panel:not(.map-panel-fullscreen) {
   display: flex;
   flex-direction: column;
-  max-height: calc(100vh - 210px);
+  max-height: calc(100vh - 168px);
 }
 
 .map-panel:not(.map-panel-fullscreen) .ap-map-layout {
@@ -2589,11 +2600,11 @@ h3 {
 .map-filter-toolbar {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
   align-items: center;
-  min-height: 34px;
-  margin-bottom: 6px;
-  padding: 4px 6px;
+  min-height: 30px;
+  margin-bottom: 4px;
+  padding: 3px 6px;
   border: 1px solid rgba(252, 238, 10, 0.26);
   border-radius: 0;
   background: #14140e;
@@ -2742,7 +2753,7 @@ h3 {
 }
 
 .map-filter-caption {
-  margin: 0 0 8px;
+  margin: 0 0 5px;
   color: #fcee0a;
   font-size: 12px;
   font-weight: 800;
@@ -3030,10 +3041,11 @@ h3 {
 .ap-map-layout {
   display: grid;
   grid-template-columns: minmax(420px, 1fr) minmax(260px, 0.34fr);
-  gap: 16px;
+  gap: 11px;
   align-items: stretch;
 }
 
+/* Radar field: near-black scope with a faint pannable grid and center vignette. */
 .ap-map-stage {
   position: relative;
   min-height: 560px;
@@ -3041,14 +3053,22 @@ h3 {
   border: 1px solid rgba(252, 238, 10, 0.26);
   border-radius: 0;
   background:
-    linear-gradient(90deg, rgba(252, 238, 10, 0.08) 1px, transparent 1px),
-    linear-gradient(180deg, rgba(252, 238, 10, 0.08) 1px, transparent 1px),
-    #14140e;
+    radial-gradient(
+      circle at 50% 50%,
+      rgba(252, 238, 10, 0.06) 0%,
+      rgba(252, 238, 10, 0.02) 40%,
+      transparent 66%
+    ),
+    linear-gradient(90deg, rgba(252, 238, 10, 0.04) 1px, transparent 1px),
+    linear-gradient(180deg, rgba(252, 238, 10, 0.04) 1px, transparent 1px),
+    #0d0d08;
   background-size:
+    auto,
     var(--map-grid-size, 48px) var(--map-grid-size, 48px),
     var(--map-grid-size, 48px) var(--map-grid-size, 48px),
     auto;
   background-position:
+    0 0,
     var(--map-grid-pan-x, 0px) var(--map-grid-pan-y, 0px),
     var(--map-grid-pan-x, 0px) var(--map-grid-pan-y, 0px),
     0 0;
@@ -3073,31 +3093,103 @@ h3 {
   transition: transform 140ms ease;
 }
 
+/* Radar sweep: slow rotating wedge, centered on the client node. Pans and
+   zooms with the canvas so it stays locked to the ring center. */
+.ap-map-canvas::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 170%;
+  aspect-ratio: 1 / 1;
+  background: conic-gradient(
+    from 0deg,
+    rgba(252, 238, 10, 0.09) 0deg,
+    rgba(252, 238, 10, 0.03) 24deg,
+    transparent 58deg 360deg
+  );
+  transform: translate(-50%, -50%) rotate(0deg);
+  animation: map-radar-sweep 9s linear infinite;
+  pointer-events: none;
+}
+
+/* Radial crosshair: hairlines through the center at 0/45/90/135 degrees. */
+.ap-map-canvas::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 170%;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, -50%);
+  background:
+    linear-gradient(
+      0deg,
+      transparent calc(50% - 1px),
+      rgba(252, 238, 10, 0.11) calc(50% - 1px) 50%,
+      transparent 50%
+    ),
+    linear-gradient(
+      90deg,
+      transparent calc(50% - 1px),
+      rgba(252, 238, 10, 0.11) calc(50% - 1px) 50%,
+      transparent 50%
+    ),
+    linear-gradient(
+      45deg,
+      transparent calc(50% - 1px),
+      rgba(252, 238, 10, 0.07) calc(50% - 1px) 50%,
+      transparent 50%
+    ),
+    linear-gradient(
+      135deg,
+      transparent calc(50% - 1px),
+      rgba(252, 238, 10, 0.07) calc(50% - 1px) 50%,
+      transparent 50%
+    );
+  pointer-events: none;
+}
+
+@keyframes map-radar-sweep {
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ap-map-canvas::before {
+    display: none;
+  }
+}
+
 .ap-map-stage-panning .ap-map-canvas {
   transition: none;
 }
 
+/* Concentric radar range rings centered on the client. */
 .map-ring {
   position: absolute;
   left: 50%;
   top: 50%;
-  border: 1px dashed rgba(252, 238, 10, 0.28);
-  border-radius: 0;
+  border: 1px solid rgba(252, 238, 10, 0.14);
+  border-radius: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
 }
 
 .map-ring span {
   position: absolute;
-  right: 12px;
-  top: 10px;
-  padding: 3px 6px;
+  left: 50%;
+  top: 0;
+  padding: 2px 6px;
   border-radius: 0;
   background: rgba(13, 13, 8, 0.82);
   color: #8f8b6d;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  transform: translate(-50%, -50%);
 }
 
 .map-ring-near {
@@ -3113,43 +3205,66 @@ h3 {
 .map-ring-far {
   width: 82%;
   height: 82%;
+  border-color: rgba(252, 238, 10, 0.25);
 }
 
+/* Client marker: yellow rotated square with a core dot, label hung below. */
 .map-center {
   position: absolute;
   left: 50%;
   top: 50%;
   z-index: 4;
-  width: 86px;
-  min-height: 58px;
-  display: grid;
-  place-items: center;
-  padding: 8px;
-  border: 2px solid #fcee0a;
+  width: 46px;
+  min-height: 46px;
+  display: block;
+  padding: 0;
+  border: 0;
   border-radius: 0;
-  background: #171712;
+  background: transparent;
   color: #eae6cb;
   text-align: center;
   transform: translate(-50%, -50%);
-  box-shadow: 0 8px 20px rgba(252, 238, 10, 0.12);
+  box-shadow: none;
+}
+
+.map-center::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fcee0a;
+  background: rgba(13, 13, 8, 0.85);
+  transform: translate(-50%, -50%) rotate(45deg);
+  transition: background 120ms ease, box-shadow 120ms ease;
+}
+
+.map-center::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  background: #fcee0a;
+  transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .map-center-button {
   appearance: none;
   font: inherit;
   cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
 }
 
-.map-center-button:hover,
-.map-center-selected {
-  border-color: #7ddb5a;
-  box-shadow: 0 0 0 5px rgba(125, 219, 90, 0.14), 0 10px 24px rgba(0, 0, 0, 0.16);
+.map-center-button:hover::before,
+.map-center-selected::before {
+  box-shadow: 0 0 0 5px rgba(252, 238, 10, 0.18), 0 0 20px rgba(252, 238, 10, 0.4);
 }
 
 .map-center-button:focus-visible {
-  outline: 3px solid rgba(252, 238, 10, 0.26);
-  outline-offset: -3px;
+  outline: 2px solid rgba(252, 238, 10, 0.45);
+  outline-offset: 2px;
 }
 
 .map-connection-layer {
@@ -3390,16 +3505,29 @@ h3 {
 
 .map-center strong,
 .map-center span {
+  position: absolute;
+  left: 50%;
   display: block;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 .map-center strong {
-  font-size: 14px;
+  top: calc(100% - 6px);
+  color: #fcee0a;
+  font-family: var(--rc-mono, ui-monospace, monospace);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .map-center span {
+  top: calc(100% + 7px);
   color: #8f8b6d;
-  font-size: 10px;
+  font-family: var(--rc-mono, ui-monospace, monospace);
+  font-size: 9px;
   font-weight: 700;
 }
 
@@ -3427,19 +3555,30 @@ h3 {
   z-index: 8;
 }
 
-.map-node:hover .map-node-orb {
+.map-node:hover .map-node-avatar {
   border-color: #fcee0a;
-  box-shadow: 0 13px 30px rgba(0, 0, 0, 0.18);
-  transform: translateY(-1px);
+  background: #fcee0a;
+  box-shadow: 0 0 14px rgba(252, 238, 10, 0.35);
+}
+
+.map-node:hover .map-node-avatar img {
+  filter: brightness(0);
 }
 
 .map-node-selected {
   z-index: 9;
 }
 
-.map-node-selected .map-node-orb {
-  border-color: #7ddb5a;
-  box-shadow: 0 0 0 6px rgba(125, 219, 90, 0.16), 0 13px 30px rgba(0, 0, 0, 0.2);
+/* Extra class bumps specificity so selection outranks stale/exposure strokes. */
+.map-node.map-node-selected .map-node-avatar {
+  border-style: solid;
+  border-color: #fcee0a;
+  background: #fcee0a;
+  box-shadow: 0 0 0 4px rgba(252, 238, 10, 0.2), 0 0 18px rgba(252, 238, 10, 0.4);
+}
+
+.map-node.map-node-selected .map-node-avatar img {
+  filter: brightness(0);
 }
 
 .map-node-outside-network {
@@ -3457,13 +3596,25 @@ h3 {
   opacity: 0.72;
 }
 
+/* Stale blips fade to a dashed dim outline. */
+.map-node-stale .map-node-avatar {
+  border-style: dashed;
+  border-color: #8f8b6d;
+}
+
+/* Exposure-flagged blips get the red stroke. */
+.map-node-exposure-review .map-node-avatar,
+.map-node-exposure-priority .map-node-avatar {
+  border-color: #ff4d3d;
+}
+
 .map-node-old {
   opacity: 0.5;
   filter: saturate(0.75);
 }
 
-.map-node-new .map-node-orb {
-  box-shadow: 0 0 0 5px rgba(217, 205, 8, 0.18), 0 10px 26px rgba(0, 0, 0, 0.16);
+.map-node-new .map-node-avatar {
+  box-shadow: 0 0 0 3px rgba(252, 238, 10, 0.22);
 }
 
 .map-node-risk-low {
@@ -3533,37 +3684,38 @@ h3 {
   --signal-color: #ff5c7c;
 }
 
-.map-node-security-suspect .map-node-orb {
-  box-shadow: 0 0 0 6px rgba(255, 92, 124, 0.2), 0 12px 28px rgba(0, 0, 0, 0.2);
+.map-node-security-suspect .map-node-avatar {
+  border-color: #ff4d3d;
+  box-shadow: 0 0 0 3px rgba(255, 77, 61, 0.24);
 }
 
 .map-node-link-connected {
   z-index: 7;
 }
 
-.map-node-link-connected .map-node-orb {
-  box-shadow: 0 0 0 5px rgba(125, 219, 90, 0.18), 0 10px 26px rgba(0, 0, 0, 0.16);
+.map-node-link-connected .map-node-avatar {
+  box-shadow: 0 0 0 3px rgba(125, 219, 90, 0.26);
 }
 
-.map-node-link-mesh .map-node-orb {
-  box-shadow: 0 0 0 4px rgba(57, 213, 221, 0.16), 0 10px 24px rgba(0, 0, 0, 0.13);
+.map-node-link-mesh .map-node-avatar {
+  box-shadow: 0 0 0 3px rgba(57, 213, 221, 0.2);
 }
 
-.map-node-link-memory .map-node-orb {
-  box-shadow: 0 0 0 4px rgba(217, 205, 8, 0.14), 0 8px 20px rgba(0, 0, 0, 0.1);
+.map-node-link-memory .map-node-avatar {
+  box-shadow: 0 0 0 3px rgba(217, 205, 8, 0.16);
 }
 
+/* Blip container: bare flex row (diamond avatar + signal bars), no chrome. */
 .map-node-orb {
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 8px;
-  border: 1.5px solid rgba(252, 238, 10, 0.3);
+  gap: 5px;
+  padding: 0;
+  border: 0;
   border-radius: 0;
-  background: #171712;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
-  transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* Compact 3-bar signal meter: green (strong) / orange (medium) / red (weak). */
@@ -3656,7 +3808,7 @@ h3 {
   padding: 6px;
   border: 2px solid #fcee0a;
   border-radius: 0;
-  background: rgba(23, 23, 18, 0.96);
+  background: rgba(13, 13, 8, 0.92);
   color: #eae6cb;
   font: inherit;
   text-align: center;
@@ -3673,9 +3825,9 @@ h3 {
 
 .map-cluster-selected {
   z-index: 5;
-  border-color: #7ddb5a;
-  background: #171712;
-  box-shadow: 0 0 0 6px rgba(125, 219, 90, 0.14), 0 14px 34px rgba(0, 0, 0, 0.22);
+  border-color: #fcee0a;
+  background: #241f0a;
+  box-shadow: 0 0 0 5px rgba(252, 238, 10, 0.16), 0 14px 34px rgba(0, 0, 0, 0.22);
 }
 
 .map-cluster strong {
@@ -3808,12 +3960,19 @@ h3 {
   background: #171712;
 }
 
+/* Angular radar blip: rotated square with yellow stroke over the dark field.
+   The device icon (assets/device-visuals) is counter-rotated inside. */
 .map-node-avatar {
   position: relative;
   z-index: 1;
-  width: 30px;
-  height: 30px;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+  width: 26px;
+  height: 26px;
+  margin: 6px;
+  transform: rotate(45deg);
+  border: 1.5px solid rgba(252, 238, 10, 0.85);
+  background: #14140e;
+  box-shadow: none;
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
 .map-node-avatar img,
@@ -3825,52 +3984,49 @@ h3 {
   object-fit: cover;
 }
 
-.map-node-access .map-node-avatar,
+.map-node-avatar img {
+  transform: rotate(-45deg) scale(1.16);
+  transition: filter 120ms ease;
+}
+
+/* Device-kind tint applies to the side-list tiles only; field blips stay as
+   uniform yellow-stroke diamonds on #14140e per the radar design. */
 .map-memory-access {
   background: #fcee0a;
 }
 
-.map-node-router .map-node-avatar,
 .map-memory-router {
   background: #fcee0a;
 }
 
-.map-node-mesh .map-node-avatar,
 .map-memory-mesh {
   background: #39d5dd;
 }
 
-.map-node-hotspot .map-node-avatar,
 .map-memory-hotspot {
   background: #a5a184;
 }
 
-.map-node-printer .map-node-avatar,
 .map-memory-printer {
   background: #fcee0a;
 }
 
-.map-node-direct .map-node-avatar,
 .map-memory-direct {
   background: #ff4d3d;
 }
 
-.map-node-hidden .map-node-avatar,
 .map-memory-hidden {
   background: #8f8b6d;
 }
 
-.map-node-local .map-node-avatar,
 .map-memory-local {
   background: #39d5dd;
 }
 
-.map-node-speaker .map-node-avatar,
 .map-memory-speaker {
   background: #2fa9b0;
 }
 
-.map-node-unknown .map-node-avatar,
 .map-memory-unknown {
   background: #8f8b6d;
 }
@@ -3879,11 +4035,11 @@ h3 {
   max-width: 86px;
   display: block;
   min-width: 0;
-  padding: 4px 7px;
-  border: 1px solid rgba(252, 238, 10, 0.35);
+  padding: 3px 6px;
+  border: 1px solid rgba(252, 238, 10, 0.22);
   border-radius: 0;
   background: rgba(13, 13, 8, 0.92);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09);
+  box-shadow: none;
 }
 
 .map-node-label strong,
@@ -3896,8 +4052,18 @@ h3 {
 }
 
 .map-node-label strong {
+  color: #8f8b6d;
   font-size: 10.5px;
   line-height: 1.12;
+}
+
+.map-node:hover .map-node-label strong,
+.map-node.map-node-selected .map-node-label strong {
+  color: #fcee0a;
+}
+
+.map-node.map-node-selected .map-node-label {
+  border-color: rgba(252, 238, 10, 0.6);
 }
 
 .map-node-label small {
@@ -3918,7 +4084,7 @@ h3 {
 
 .map-side-list {
   min-height: 560px;
-  padding: 12px;
+  padding: 10px;
   border: 1px solid rgba(252, 238, 10, 0.26);
   border-radius: 0;
   background: #171712;
@@ -3958,7 +4124,7 @@ h3 {
   grid-template-columns: 32px minmax(0, 1fr);
   gap: 9px;
   align-items: center;
-  padding: 10px 0;
+  padding: 7px 0;
   border-top: 1px solid rgba(252, 238, 10, 0.22);
 }
 
@@ -4000,7 +4166,7 @@ h3 {
 }
 
 .map-memory-button-selected strong {
-  color: #7ddb5a;
+  color: #fcee0a;
 }
 
 .map-memory-button:focus-visible {
@@ -5248,7 +5414,7 @@ h3 {
 
 .alert-list {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .observation-list {
@@ -5257,7 +5423,7 @@ h3 {
 }
 
 .alert-list li {
-  padding-top: 12px;
+  padding-top: 8px;
   border-top: 1px solid rgba(252, 238, 10, 0.22);
 }
 
@@ -6503,7 +6669,12 @@ h3 {
 
 @media (max-width: 760px) {
   .app-shell {
-    padding: 14px;
+    padding: 10px 14px 14px;
+  }
+
+  .header-band {
+    margin: -10px -14px 0;
+    padding: 6px 14px;
   }
 
   .header-band,
@@ -6974,7 +7145,6 @@ h3 {
 .diagnostics-list li,
 .vulnerability-plan-mini,
 .scan-location-card,
-.map-center,
 .map-cluster,
 .connection-badge,
 .network-live-chip,

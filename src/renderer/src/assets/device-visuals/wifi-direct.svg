@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Wi-Fi Direct device">
-  <rect width="96" height="96" rx="18" fill="#fff0ef"/>
-  <rect x="30" y="17" width="36" height="62" rx="9" fill="#9d2424"/>
-  <rect x="35" y="25" width="26" height="39" rx="4" fill="#ffffff"/>
-  <circle cx="48" cy="71" r="3" fill="#ffffff"/>
-  <path d="M23 36c-6 8-6 16 0 24" fill="none" stroke="#9d2424" stroke-width="5" stroke-linecap="round"/>
-  <path d="M73 36c6 8 6 16 0 24" fill="none" stroke="#9d2424" stroke-width="5" stroke-linecap="round"/>
+  <path d="M4 4 H92 V76 L76 92 H4 Z" fill="#14140E" stroke="#FCEE0A" stroke-opacity=".35" stroke-width="2"/>
+  <rect x="20" y="34" width="16" height="28" fill="none" stroke="#FCEE0A" stroke-width="5"/>
+  <rect x="60" y="34" width="16" height="28" fill="none" stroke="#FCEE0A" stroke-width="5"/>
+  <path d="M40 42 H52 M48 38 L54 42 L48 46" fill="none" stroke="#FCEE0A" stroke-width="4" stroke-linecap="square"/>
+  <path d="M56 54 H44 M48 50 L42 54 L48 58" fill="none" stroke="#8f8b6d" stroke-width="4" stroke-linecap="square"/>
 </svg>
