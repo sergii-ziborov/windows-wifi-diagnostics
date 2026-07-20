@@ -2174,34 +2174,49 @@ export function App() {
           value={valueOrUnknown(firstSnapshot?.ssid ?? null)}
           detail={`${valueOrUnknown(firstSnapshot?.state ?? null)} | ${formatBssidTail(firstSnapshot?.bssid ?? null)}`}
           tone={firstSnapshot?.state === 'connected' ? 'ok' : 'warn'}
+          onActivate={() => setActiveTab('map')}
+          activateHint="Open the RF map"
         />
         <OverviewKpi
           label="Signal"
           value={formatPercent(firstSnapshot?.signal_percent ?? null)}
           detail={`${formatRssi(firstSnapshot?.rssi_dbm ?? null)} | ch ${valueOrUnknown(firstSnapshot?.channel ?? null)}`}
           tone={(firstSnapshot?.signal_percent ?? 0) >= 60 ? 'ok' : 'warn'}
+          onActivate={() => setActiveTab('map')}
+          activateHint="Open the RF map"
         />
         <OverviewKpi
           label="Nearby"
           value={`${networks?.network_count ?? 0} SSIDs`}
           detail={`${networks?.bssid_count ?? rememberedNetworkItems.length} BSSIDs | ${liveRememberedCount} live`}
+          onActivate={() => setActiveTab('network')}
+          activateHint="Open Nearby APs"
         />
         <OverviewKpi
           label="Exposure"
           value={exposureCounts.priority > 0 ? `${exposureCounts.priority} priority` : `${exposureCounts.review} review`}
           detail={`${exposureCounts.watch} watch | ${exposureCounts.none} clean`}
           tone={exposureCounts.priority > 0 ? 'danger' : exposureCounts.review > 0 ? 'warn' : 'ok'}
+          onActivate={() => {
+            setActiveTab('network');
+            setNetworkIntelFilter(REVIEW_NETWORK_INTEL_FILTER);
+          }}
+          activateHint="Show flagged APs in Nearby APs"
         />
         <OverviewKpi
           label="Sources"
           value={`${availableSourceCount}/${sourceStatuses.length || 3}`}
           detail={networkFreshness.retainedLastGood ? 'using retained scan' : `checked ${formatAge(secondsSince(networkFreshness.checkedAtUtc, nowMs))}`}
           tone={availableSourceCount >= 3 ? 'ok' : 'warn'}
+          onActivate={() => setActiveTab('network')}
+          activateHint="Open the Network tab"
         />
         <OverviewKpi
           label="Last Run"
           value={latestRun ? formatRunStorage(latestRun) : 'none'}
           detail={latestRun ? `${formatRunLabel(latestRun)} | ${valueOrUnknown(latestRun.network_bssid_count)} APs` : 'no saved baseline yet'}
+          onActivate={() => setActiveTab('reports')}
+          activateHint="Open Reports"
         />
       </section>
 
@@ -7599,20 +7614,35 @@ function OverviewKpi({
   label,
   value,
   detail,
-  tone = 'neutral'
+  tone = 'neutral',
+  onActivate,
+  activateHint
 }: {
   label: string;
   value: string | number;
   detail: string;
   tone?: 'neutral' | 'ok' | 'warn' | 'danger';
+  onActivate?: () => void;
+  activateHint?: string;
 }) {
-  return (
-    <div className={`overview-kpi overview-kpi-${tone}`}>
+  const className = `overview-kpi overview-kpi-${tone}${onActivate ? ' overview-kpi-button' : ''}`;
+  const body = (
+    <>
       <span>{label}</span>
       <strong>{value}</strong>
       <small>{detail}</small>
-    </div>
+    </>
   );
+
+  if (onActivate) {
+    return (
+      <button type="button" className={className} onClick={onActivate} title={activateHint}>
+        {body}
+      </button>
+    );
+  }
+
+  return <div className={className}>{body}</div>;
 }
 
 function ConnectionBadges({
