@@ -4,7 +4,7 @@
   "private": true,
   "description": "Desktop UI for RadioChron — local-first Windows Wi-Fi diagnostics, evidence timelines, and network inventory",
   "author": "Sergii Ziborov",
-  "license": "MIT",
+  "license": "(MIT OR Apache-2.0)",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sergii-ziborov/radiochron-electron.git"
