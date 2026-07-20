@@ -3938,13 +3938,6 @@ function LocationRfMap({
           </select>
         </label>
       </div>
-      {isFiltered || hiddenByHistoryCount > 0 ? (
-        <p className="map-filter-caption">
-          Showing {historyFilteredItems.length} of {summaryItems.length}: {activeFilter.label}
-          {hiddenByHistoryCount > 0 ? ` | time filter ${formatMapHistoryFilter(mapHistoryFilter)} hides ${hiddenByHistoryCount}` : ''}
-        </p>
-      ) : null}
-
       <div className="ap-map-layout">
         <div
           ref={mapStageRef}
