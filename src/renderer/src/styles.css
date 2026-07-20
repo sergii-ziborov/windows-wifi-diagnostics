@@ -316,6 +316,14 @@ h3 {
   grid-template-columns: minmax(320px, 1.35fr) minmax(280px, 0.75fr) minmax(280px, 0.9fr);
   gap: 13px;
   padding-top: 10px;
+  /* Fill the window: the panels reach the bottom instead of leaving a black band. */
+  min-height: calc(100dvh - 176px);
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+.overview-grid > .panel {
+  min-height: 0;
+  overflow: auto;
 }
 
 .overview-kpi-grid {
