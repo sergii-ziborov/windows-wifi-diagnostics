@@ -2426,6 +2426,9 @@ export function App() {
           currentSnapshot={firstSnapshot ?? null}
           localNetworkState={localNetworkScanState}
           onScanLocalNetwork={() => void runLocalNetworkScan('passive')}
+          onIntelligenceUpdated={applyDeviceIntelligenceUpdate}
+          onVulnerabilityLookupUpdated={applyVulnerabilityLookupUpdate}
+          onVulnerabilityLookupRecorded={recordVulnerabilityLookup}
         />
       </section>
       ) : null}
@@ -3058,7 +3061,10 @@ function LeakReportsPanel({
   connectedItem,
   currentSnapshot,
   localNetworkState,
-  onScanLocalNetwork
+  onScanLocalNetwork,
+  onIntelligenceUpdated,
+  onVulnerabilityLookupUpdated,
+  onVulnerabilityLookupRecorded
 }: {
   location: ScanLocationRecord | null;
   locationItems: Array<RememberedNetwork & { ageSeconds: number | null; isStale: boolean }>;
@@ -3066,11 +3072,16 @@ function LeakReportsPanel({
   currentSnapshot: WindowsWifiSnapshot | null;
   localNetworkState: LocalNetworkScanState;
   onScanLocalNetwork: () => void;
+  onIntelligenceUpdated: (network: WindowsWifiNetwork, override: DeviceIntelligenceOverride) => void;
+  onVulnerabilityLookupUpdated: (network: WindowsWifiNetwork, result: DeviceVulnerabilityLookupResult) => void;
+  onVulnerabilityLookupRecorded: LeakLookupRecordAppender;
 }) {
   const [scope, setScope] = useState<'location' | 'connected'>('location');
   const [pdfState, setPdfState] = useState<PdfExportState>({ exporting: false, result: null, error: null });
+  const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
   const scopedItems = scope === 'connected' ? (connectedItem ? [connectedItem] : []) : locationItems;
   const vulnerableItems = scopedItems.filter(isLeakRelevantNetworkItem);
+  const selectedItem = scopedItems.find((item) => item.key === selectedItemKey) ?? null;
   const connectedDevices = localNetworkState.result?.devices ?? [];
   const localChecks = localNetworkState.result?.exposure_checks ?? [];
   const scopeTitle = scope === 'connected'
@@ -3163,11 +3174,18 @@ function LeakReportsPanel({
             <ol>
               {vulnerableItems.map((item) => (
                 <li key={item.key} className={`leak-report-item vulnerability-${item.network.vulnerability_intel?.exposure_level ?? 'none'}`}>
-                  <span>
-                    <strong>{formatNetworkSsidLabel(item.network)}</strong>
-                    <small>{valueOrUnknown(item.network.bssid)} | {formatVulnerabilityBadge(item.network.vulnerability_intel)} | {formatNetworkSecurityBadge(item.network)}</small>
-                  </span>
-                  <em>{item.isStale ? 'stale' : 'live'}</em>
+                  <button
+                    type="button"
+                    className="leak-report-open"
+                    onClick={() => setSelectedItemKey(item.key)}
+                    aria-label={`Inspect ${formatNetworkSsidLabel(item.network)}`}
+                  >
+                    <span>
+                      <strong>{formatNetworkSsidLabel(item.network)}</strong>
+                      <small>{valueOrUnknown(item.network.bssid)} | {formatVulnerabilityBadge(item.network.vulnerability_intel)} | {formatNetworkSecurityBadge(item.network)}</small>
+                    </span>
+                    <em>{item.isStale ? 'stale' : 'live'}</em>
+                  </button>
                 </li>
               ))}
             </ol>
@@ -3211,6 +3229,16 @@ function LeakReportsPanel({
             ))}
           </ol>
         </section>
+      ) : null}
+      {selectedItem ? (
+        <DeviceModal
+          item={selectedItem}
+          currentSnapshot={currentSnapshot}
+          onClose={() => setSelectedItemKey(null)}
+          onIntelligenceUpdated={onIntelligenceUpdated}
+          onVulnerabilityLookupUpdated={onVulnerabilityLookupUpdated}
+          onVulnerabilityLookupRecorded={onVulnerabilityLookupRecorded}
+        />
       ) : null}
     </article>
   );

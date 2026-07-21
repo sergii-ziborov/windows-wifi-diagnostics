@@ -2151,6 +2151,34 @@ h3 {
   text-transform: uppercase;
 }
 
+/* Clickable review row: a full-width button that opens the AP detail modal. */
+.leak-report-open {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.leak-report-open:hover strong,
+.leak-report-open:focus-visible strong {
+  color: #fcee0a;
+}
+
+.leak-report-open:focus-visible {
+  outline: 2px solid rgba(252, 238, 10, 0.6);
+  outline-offset: 2px;
+}
+
 .vulnerability-plan-mini {
   display: grid;
   gap: 7px;
