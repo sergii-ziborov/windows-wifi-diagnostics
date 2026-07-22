@@ -163,4 +163,5 @@ See [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md).
 - [`radiochron-site`](https://github.com/sergii-ziborov/radiochron-site) — website
   source.
 
-Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).
+Licensed under the [MIT License](LICENSE-MIT). The underlying `radiochron`
+Rust core remains separately dual-licensed under MIT or Apache-2.0.
