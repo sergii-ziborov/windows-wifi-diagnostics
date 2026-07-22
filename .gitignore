@@ -4,6 +4,8 @@ dist/
 .dist/
 out/
 release/
+native/bin/
+native/radiochron-desktop-bridge/target/
 .vite/
 .cache/
 coverage/

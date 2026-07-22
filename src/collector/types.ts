@@ -1,4 +1,9 @@
 export type CollectorSourceName =
+  | 'radiochron_native_status'
+  | 'radiochron_native_wifi_scan'
+  | 'radiochron_native_bss_list'
+  | 'radiochron_native_networks'
+  | 'platform_history'
   | 'windows_wlan_autoconfig_operational'
   | 'windows_native_bss_list'
   | 'windows_native_wifi_scan'

@@ -1,0 +1,50 @@
+appId: io.radiochron.desktop
+productName: RadioChron Desktop
+asar: true
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**
+  - package.json
+  - '!node_modules/radiochron/native/**'
+  - '!node_modules/radiochron/vendor-core/**'
+extraResources:
+  - from: native/bin
+    to: native
+    filter:
+      - radiochron-node-bridge
+      - radiochron-node-bridge.exe
+      - build-info.json
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: true
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+mac:
+  category: public.app-category.utilities
+  target:
+    - dmg
+    - zip
+  hardenedRuntime: true
+  extendInfo:
+    NSLocationUsageDescription: RadioChron uses location permission only so macOS can expose nearby Wi-Fi SSID and BSSID data.
+    NSLocationWhenInUseUsageDescription: RadioChron uses location permission only so macOS can expose nearby Wi-Fi SSID and BSSID data.
+dmg:
+  backgroundColor: '#0d0d08'
+  contents:
+    - x: 130
+      y: 220
+      type: file
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications

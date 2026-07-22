@@ -88,6 +88,22 @@ h1 {
   line-height: 1.12;
 }
 
+.header-main h1 span {
+  color: #8f8b6d;
+  font-weight: 500;
+}
+
+.demo-mode-badge {
+  border: 1px solid #fcee0a;
+  color: #fcee0a;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.5rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 h2 {
   font-size: 16px;
 }

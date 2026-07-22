@@ -63,12 +63,12 @@ export async function getBaselineNetworks(
         databaseFile: options.databaseFile,
         location: options.location ?? null
       });
-      return result(context, [...sources, netshNetworksAvailable(networks)], networks, persisted.scan_location);
+      return result(context, [...sources, networkListAvailable(sources, networks)], networks, persisted.scan_location);
     }
 
-    return result(context, [...sources, netshNetworksAvailable(networks)], networks, null);
+    return result(context, [...sources, networkListAvailable(sources, networks)], networks, null);
   } catch (error) {
-    return result(context, [...sources, netshNetworksUnavailable(error)], [], null);
+    return result(context, [...sources, networkListUnavailable(sources, error)], [], null);
   }
 }
 
@@ -147,20 +147,29 @@ function platformUnavailable(): CollectorSourceStatus {
   };
 }
 
-function netshNetworksAvailable(networks: WindowsWifiNetwork[]): CollectorSourceStatus {
+function networkListAvailable(
+  sources: CollectorSourceStatus[],
+  networks: WindowsWifiNetwork[]
+): CollectorSourceStatus {
   return {
-    name: 'netsh_wlan_networks',
+    name: networkListSourceName(sources),
     available: true,
     detail: `bssid_count=${networks.length}`
   };
 }
 
-function netshNetworksUnavailable(error: unknown): CollectorSourceStatus {
+function networkListUnavailable(sources: CollectorSourceStatus[], error: unknown): CollectorSourceStatus {
   return {
-    name: 'netsh_wlan_networks',
+    name: networkListSourceName(sources),
     available: false,
     detail: error instanceof Error ? error.message : String(error)
   };
+}
+
+function networkListSourceName(sources: CollectorSourceStatus[]): CollectorSourceStatus['name'] {
+  return sources.some((source) => source.name === 'radiochron_native_bss_list')
+    ? 'radiochron_native_networks'
+    : 'netsh_wlan_networks';
 }
 
 function boundedScanSettleMs(value: number | undefined): number {

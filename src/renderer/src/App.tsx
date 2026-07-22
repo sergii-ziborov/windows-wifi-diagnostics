@@ -445,23 +445,31 @@ const SOURCE_DESCRIPTORS: SourceDescriptor[] = [
     key: 'wifiStatus',
     title: 'Wi-Fi status snapshot',
     role: 'Adapter, SSID, BSSID, channel, signal, rates',
-    command: 'netsh wlan show interfaces',
-    sourceNames: ['netsh_wlan_interfaces']
+    command: 'radiochron-js status (Windows WLAN / CoreWLAN)',
+    sourceNames: ['radiochron_native_status'],
+    optionalSourceNames: ['netsh_wlan_interfaces']
   },
   {
     key: 'wlanEvents',
     title: 'WLAN lifecycle events',
     role: 'Connect, reconnect, association and security evidence',
-    command: 'Microsoft-Windows-WLAN-AutoConfig/Operational',
-    sourceNames: ['windows_wlan_autoconfig_operational']
+    command: 'Windows WLAN AutoConfig or saved RadioChron baselines',
+    sourceNames: ['windows_wlan_autoconfig_operational'],
+    optionalSourceNames: ['platform_history']
   },
   {
     key: 'nearbyAps',
     title: 'Nearby AP inventory',
     role: 'SSID, BSSID, channel, signal, security, BSS load',
-    command: 'Native WlanScan + netsh wlan show networks mode=bssid',
-    sourceNames: ['netsh_wlan_networks'],
-    optionalSourceNames: ['windows_native_wifi_scan', 'windows_native_bss_list']
+    command: 'radiochron-js BSS scan (Windows WLAN / CoreWLAN)',
+    sourceNames: ['radiochron_native_networks'],
+    optionalSourceNames: [
+      'radiochron_native_wifi_scan',
+      'radiochron_native_bss_list',
+      'netsh_wlan_networks',
+      'windows_native_wifi_scan',
+      'windows_native_bss_list'
+    ]
   }
 ];
 
@@ -714,6 +722,7 @@ const MAP_RF_CENTER_COLLISION_RADIUS_PX = 62;
 const MAP_RF_COLLISION_ITERATIONS = 72;
 const MAP_FAR_RING_RADIUS_PERCENT = 41;
 const MAP_COORDINATE_FIX_OBSERVATIONS = 10;
+const MAP_DEFAULT_SPREAD_KM = 0.25;
 const LEGACY_MAP_LAYOUT_STORAGE_KEYS = [
   'monitor.map_layout.v1',
   'monitor.map_layout.v2',
@@ -815,8 +824,8 @@ const SCAN_VISIBILITY_PROFILES: ScanVisibilityProfile[] = [
     label: 'Full passive',
     title: 'Lowest footprint',
     risk: 'low',
-    traffic: 'Reads local Windows cache/inventory only.',
-    traces: 'Monitor sends no LAN probe traffic; normal OS traffic can still be logged.',
+    traffic: 'Reads the local OS neighbor cache and saved inventory only.',
+    traces: 'RadioChron sends no LAN probe traffic; normal OS traffic can still be logged.',
     operatorNote: 'Use for quiet map updates and vulnerability triage from saved evidence.',
     buttonLabel: 'Run passive',
     runningLabel: 'Reading cache'
@@ -954,6 +963,7 @@ export function App() {
   const networkRefreshInFlightRef = useRef(false);
   const lastHistorySnapshotKeyRef = useRef<string | null>(null);
   const collectionPreset = COLLECTION_PRESETS[collectionPresetIndex] ?? COLLECTION_PRESETS[0];
+  const demoMode = new URLSearchParams(window.location.search).get('demo') === '1';
 
   useEffect(() => {
     clearLegacyMapLayoutStorage();
@@ -1939,6 +1949,7 @@ export function App() {
   );
   const networkListSource = useMemo(
     () =>
+      networks?.sources.find((source) => source.name === 'radiochron_native_networks') ??
       networks?.sources.find((source) => source.name === 'netsh_wlan_networks') ??
       networks?.sources[0] ??
       null,
@@ -2053,12 +2064,14 @@ export function App() {
     <main className={activeTab === 'map' ? 'app-shell app-shell-fixed' : 'app-shell'}>
       <section className="header-band">
         <div className="header-main">
-          <h1>Monitor</h1>
+          <h1>RadioChron <span>Desktop</span></h1>
+          {demoMode ? <span className="demo-mode-badge">Synthetic demo data</span> : null}
           <nav className="app-tabs" aria-label="Main sections">
             {APP_TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
+                data-app-tab={tab.key}
                 className={activeTab === tab.key ? 'app-tab app-tab-active' : 'app-tab'}
                 onClick={() => setActiveTab(tab.key)}
               >
@@ -2229,7 +2242,7 @@ export function App() {
       <section className="overview-grid">
         <article className="panel">
           <h2>Wi-Fi Status</h2>
-          {!error && !status ? <p className="muted">Reading Windows telemetry...</p> : null}
+          {!error && !status ? <p className="muted">Reading native Wi-Fi telemetry...</p> : null}
           {firstSnapshot ? (
             <>
               <div className="status-row">
@@ -2625,7 +2638,7 @@ function LocalNetworkPanel({
         ) : null}
       </div>
       <p className="local-network-note">
-        Choose how visible Monitor should be for this scan. No mode guarantees invisibility; the passive profile only means Monitor sends no LAN probe traffic.
+        Choose how visible RadioChron should be for this scan. No mode guarantees invisibility; the passive profile only means RadioChron sends no LAN probe traffic.
       </p>
       <ScanVisibilityProfiles state={state} onScan={onScan} />
       <ScanIdentityPanel
@@ -2980,7 +2993,7 @@ function ScanIdentityPanel({
       <div className="scan-identity-heading">
         <div>
           <strong>Scan identity</strong>
-          <span>{valueOrUnknown(state?.interface_name ?? null)} | default {state?.suggested_computer_name ?? 'MONITOR-SCOUT'}</span>
+          <span>{valueOrUnknown(state?.interface_name ?? null)} | default {state?.suggested_computer_name ?? 'RADIOCHRON-SCOUT'}</span>
         </div>
         <button type="button" className="secondary-button" onClick={onRefresh} disabled={busy}>
           {identity.loading ? 'Refreshing' : 'Refresh'}
@@ -3010,7 +3023,7 @@ function ScanIdentityPanel({
           <input
             type="text"
             value={identity.computerNameInput}
-            placeholder={state?.suggested_computer_name ?? 'MONITOR-SCOUT'}
+            placeholder={state?.suggested_computer_name ?? 'RADIOCHRON-SCOUT'}
             maxLength={15}
             spellCheck={false}
             onChange={(event) => onComputerNameChange(event.target.value.toUpperCase())}
@@ -3816,7 +3829,7 @@ function LocationRfMap({
   onVulnerabilityLookupRecorded: LeakLookupRecordAppender;
 }) {
   const [showAllMapItems, setShowAllMapItems] = useState(false);
-  const [mapRangeKm, setMapRangeKm] = useState(0.08);
+  const [mapRangeKm, setMapRangeKm] = useState(MAP_DEFAULT_SPREAD_KM);
   const [mapHistoryFilter, setMapHistoryFilter] = useState<MapHistoryFilter>(MAP_DEFAULT_HISTORY_FILTER);
   const exactConnectedItem = useMemo(
     () => findExactConnectedMapItem(items, currentSnapshot),
@@ -7215,7 +7228,7 @@ function NetworkList({
   }
 
   if (items.length === 0) {
-    return <p className="muted compact">No nearby APs returned by Windows.</p>;
+    return <p className="muted compact">No nearby APs returned by the native collector.</p>;
   }
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / pageSize));
@@ -10991,7 +11004,9 @@ function shouldRetainNetworkResult(
 
 function getNetworkSourceError(networks: BaselineNetworksResult): string | null {
   const unavailableSource = networks.sources.find(
-    (source) => source.name === 'netsh_wlan_networks' && !source.available
+    (source) =>
+      (source.name === 'radiochron_native_networks' || source.name === 'netsh_wlan_networks') &&
+      !source.available
   );
 
   if (!unavailableSource) {
@@ -11920,6 +11935,16 @@ function mergeSourceStatuses(sources: CollectorSourceStatus[]): CollectorSourceS
 
 function formatSourceName(name: CollectorSourceStatus['name']): string {
   switch (name) {
+    case 'radiochron_native_status':
+      return 'RadioChron core status';
+    case 'radiochron_native_wifi_scan':
+      return 'RadioChron native scan';
+    case 'radiochron_native_bss_list':
+      return 'RadioChron native BSS list';
+    case 'radiochron_native_networks':
+      return 'RadioChron nearby networks';
+    case 'platform_history':
+      return 'Platform history';
     case 'windows_wlan_autoconfig_operational':
       return 'WLAN AutoConfig';
     case 'windows_native_bss_list':

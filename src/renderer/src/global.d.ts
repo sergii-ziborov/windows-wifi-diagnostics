@@ -32,6 +32,8 @@ import type {
 interface MonitorBridgeCapabilities {
   schema: 'monitor.bridge_capabilities.v1';
   generated_at_utc: string;
+  demo_mode: boolean;
+  platform: NodeJS.Platform;
   ipc: {
     device_vulnerability_lookup: boolean;
     device_history: boolean;

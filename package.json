@@ -2,7 +2,7 @@
   "name": "radiochron-electron",
   "version": "0.1.0",
   "private": true,
-  "description": "Desktop UI for RadioChron — local-first Windows Wi-Fi diagnostics, evidence timelines, and network inventory",
+  "description": "Desktop UI for RadioChron — local-first Windows and macOS Wi-Fi diagnostics, evidence timelines, and network inventory",
   "author": "Sergii Ziborov",
   "license": "(MIT OR Apache-2.0)",
   "repository": {
@@ -16,10 +16,11 @@
   "keywords": [
     "electron",
     "windows",
+    "macos",
     "wifi",
     "network-diagnostics",
     "wireless-security",
-    "mcp",
+    "rust",
     "react",
     "typescript"
   ],
@@ -38,6 +39,10 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test",
+    "native:build": "node scripts/build-native.mjs",
+    "screenshots": "npm run build && node scripts/capture-demo.mjs",
+    "dist:win": "npm run native:build && npm run build && electron-builder --win nsis --publish never",
+    "dist:mac": "npm run native:build && npm run build && electron-builder --mac dmg zip --publish never",
     "baseline:status": "tsx src/cli/baseline.ts status",
     "baseline:networks": "tsx src/cli/baseline.ts networks",
     "baseline:diagnostics": "tsx src/cli/baseline.ts diagnostics",
@@ -52,6 +57,7 @@
     "baseline:sample": "tsx src/cli/baseline.ts collect --duration 60 --interval 5"
   },
   "dependencies": {
+    "radiochron": "https://github.com/sergii-ziborov/radiochron-js/archive/9e7ad7bffccdb42d2581780fa1c4013c00738037.tar.gz",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -61,6 +67,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",
     "electron": "^42.6.1",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^4.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",

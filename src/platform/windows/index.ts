@@ -8,9 +8,10 @@ import type {
 } from '../../collector/types';
 import { buildNetIpConfigurationScript, enrichSnapshotsWithIpConfiguration } from './ipConfig';
 import {
-  getNearbyWifiBssEntries as getRadioChronBssEntries,
-  requestNearbyWifiScan as requestRadioChronScan
-} from './radiochron';
+  getCoreSourceStatus,
+  getNativeWifiBssEntries as getRadioChronBssEntries,
+  requestNativeWifiScan as requestRadioChronScan
+} from '../rustCore';
 import { parseNetshWlanInterfaces, parseNetshWlanNetworks } from './netsh';
 import { runPowerShell } from './powershell';
 import { buildWlanEventsScript, parseWlanAutoConfigEvents, WLAN_AUTOCONFIG_LOG } from './wlanEvents';
@@ -39,12 +40,13 @@ let wlanLogStatusInFlight: Promise<CollectorSourceStatus> | null = null;
 export function createWindowsPlatformAdapter(): BaselinePlatformAdapter {
   return {
     async getSourceStatus(): Promise<CollectorSourceStatus[]> {
-      const [wlanLog, netsh, networks] = await Promise.all([
+      const [core, wlanLog, netsh, networks] = await Promise.all([
+        getCoreSourceStatus(),
         checkWlanLog(),
         checkNetsh(),
         checkNetshNetworks()
       ]);
-      return [wlanLog, netsh, networks];
+      return [core, wlanLog, netsh, networks];
     },
 
     async getWlanEventSourceStatus(): Promise<CollectorSourceStatus[]> {

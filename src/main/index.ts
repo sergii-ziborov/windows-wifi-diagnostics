@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, session } from 'electron';
-import { writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { collectBaseline, getBaselineStatus } from '../collector/baselineService';
 import { checkInternetConnectivity } from '../collector/connectivityService';
@@ -21,6 +21,18 @@ import {
   restoreWindowsScanIdentity
 } from '../platform/windows/scanIdentity';
 import { getWindowsWifiProfileSecret } from '../platform/windows/wlanProfiles';
+import { disposeRadioChronCoreClient } from 'radiochron';
+import {
+  demoBaselineEvents,
+  demoBaselineNetworks,
+  demoBaselineRuns,
+  demoBaselineStatus,
+  demoBaselineTimeline,
+  demoDeviceHistory,
+  demoDiagnosticsBundles,
+  demoScanIdentityState,
+  demoScanLocations
+} from '../demo/fixtures';
 import type {
   AiThreatReviewResult,
   AiThreatReviewScope,
@@ -47,6 +59,7 @@ import type {
 let mainWindow: BrowserWindow | null = null;
 let sampleCollectionInFlight: Promise<CollectResult> | null = null;
 let sampleCollectionAbortController: AbortController | null = null;
+const DEMO_MODE = process.env.RADIOCHRON_DEMO === '1';
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -68,30 +81,67 @@ function createWindow(): void {
     mainWindow?.show();
   });
 
+  if (DEMO_MODE && process.env.RADIOCHRON_CAPTURE_DIR) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      void captureDemoScreenshots(mainWindow, process.env.RADIOCHRON_CAPTURE_DIR ?? '');
+    });
+  }
+
   if (process.env.ELECTRON_RENDERER_URL) {
-    mainWindow.loadURL(process.env.ELECTRON_RENDERER_URL);
+    const rendererUrl = new URL(process.env.ELECTRON_RENDERER_URL);
+    if (DEMO_MODE) rendererUrl.searchParams.set('demo', '1');
+    mainWindow.loadURL(rendererUrl.toString());
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
+    mainWindow.loadFile(join(__dirname, '../renderer/index.html'), DEMO_MODE ? { query: { demo: '1' } } : undefined);
+  }
+}
+
+async function captureDemoScreenshots(window: BrowserWindow | null, captureDir: string): Promise<void> {
+  if (!window || !captureDir) return;
+  try {
+    await mkdir(captureDir, { recursive: true });
+    await window.webContents.executeJavaScript(`new Promise((resolve, reject) => {
+      const deadline = Date.now() + 15000;
+      const poll = () => {
+        if (document.body.innerText.includes('Lab Mesh 6E')) return resolve(true);
+        if (Date.now() >= deadline) return reject(new Error('demo data did not render'));
+        setTimeout(poll, 100);
+      };
+      poll();
+    })`);
+
+    for (const tab of ['overview', 'map', 'network', 'channels']) {
+      await window.webContents.executeJavaScript(`document.querySelector('[data-app-tab="${tab}"]')?.click()`);
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      const image = await window.webContents.capturePage();
+      await writeFile(join(captureDir, `radiochron-desktop-${tab}.png`), image.toPNG());
+    }
+    app.quit();
+  } catch (error) {
+    console.error('RadioChron demo screenshot capture failed', error);
+    app.exit(1);
   }
 }
 
 ipcMain.handle('monitor:capabilities', async () => ({
   schema: 'monitor.bridge_capabilities.v1',
   generated_at_utc: new Date().toISOString(),
+  demo_mode: DEMO_MODE,
+  platform: process.platform,
   ipc: {
     device_vulnerability_lookup: true,
     device_history: true,
     device_intelligence_update: true,
     ai_threat_review: true,
-    wifi_profile_secret: true,
+    wifi_profile_secret: process.platform === 'win32',
     connectivity_check: true,
-    local_network_scan: true,
-    scan_identity: true,
+    local_network_scan: process.platform === 'win32',
+    scan_identity: process.platform === 'win32',
     scan_locations: true,
     report_pdf_export: true
   }
 }));
-ipcMain.handle('baseline:status', async () => getBaselineStatus());
+ipcMain.handle('baseline:status', async () => DEMO_MODE ? demoBaselineStatus() : getBaselineStatus());
 ipcMain.handle('baseline:networks', async (_event, options?: {
   refreshScan?: unknown;
   scanSettleMs?: unknown;
@@ -99,7 +149,7 @@ ipcMain.handle('baseline:networks', async (_event, options?: {
   persistInventory?: unknown;
   location?: unknown;
 }) =>
-  getBaselineNetworks({
+  DEMO_MODE ? demoBaselineNetworks() : getBaselineNetworks({
     refreshScan: options?.refreshScan === true,
     scanSettleMs: boundedInteger(options?.scanSettleMs, 4500, 0, 10_000),
     useDeviceIntelligence: options?.useDeviceIntelligence === false ? false : undefined,
@@ -126,7 +176,7 @@ ipcMain.handle(
 ipcMain.handle(
   'scan-identity:state',
   async (_event, options?: { interfaceName?: unknown; adapterName?: unknown }): Promise<ScanIdentityState> =>
-    getWindowsScanIdentityState({
+    DEMO_MODE ? demoScanIdentityState() : getWindowsScanIdentityState({
       interfaceName: readOptionalText(options?.interfaceName, 120),
       adapterName: readOptionalText(options?.adapterName, 240)
     })
@@ -162,18 +212,18 @@ ipcMain.handle(
     })
 );
 ipcMain.handle('baseline:diagnostics:list', async (_event, options?: { last?: unknown }) =>
-  listBaselineDiagnosticsBundles({
+  DEMO_MODE ? demoDiagnosticsBundles() : listBaselineDiagnosticsBundles({
     last: boundedInteger(options?.last, 10, 1, 100),
     diagnosticsDir: null
   })
 );
 ipcMain.handle('baseline:events', async (_event, options?: { last?: unknown }) =>
-  getBaselineEvents({
+  DEMO_MODE ? demoBaselineEvents() : getBaselineEvents({
     last: boundedInteger(options?.last, 25, 1, 200)
   })
 );
 ipcMain.handle('baseline:runs', async (_event, options?: { last?: unknown }) =>
-  listBaselineRuns({
+  DEMO_MODE ? demoBaselineRuns() : listBaselineRuns({
     last: boundedInteger(options?.last, 10, 1, 100),
     runsDir: null
   })
@@ -241,7 +291,7 @@ ipcMain.handle(
     })
 );
 ipcMain.handle('baseline:timeline', async (_event, options?: { last?: unknown; windowMinutes?: unknown; minCycles?: unknown }) =>
-  getBaselineTimeline({
+  DEMO_MODE ? demoBaselineTimeline() : getBaselineTimeline({
     last: boundedInteger(options?.last, 60, 1, 300),
     windowMinutes: boundedInteger(options?.windowMinutes, 10, 1, 120),
     minCycles: boundedInteger(options?.minCycles, 2, 2, 20)
@@ -280,14 +330,14 @@ ipcMain.handle(
 ipcMain.handle(
   'device:history',
   async (_event, options?: { newWindowHours?: unknown }): Promise<DeviceHistoryResult> =>
-    listDeviceHistory({
+    DEMO_MODE ? demoDeviceHistory() : listDeviceHistory({
       newWindowHours: boundedInteger(options?.newWindowHours, 24, 1, 24 * 30)
     })
 );
 ipcMain.handle(
   'scan-locations:list',
   async (): Promise<ScanLocationsResult> =>
-    listScanLocations()
+    DEMO_MODE ? demoScanLocations() : listScanLocations()
 );
 ipcMain.handle(
   'device:intelligence:cancel',
@@ -706,4 +756,8 @@ app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  disposeRadioChronCoreClient();
 });

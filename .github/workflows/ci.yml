@@ -10,7 +10,11 @@ permissions:
 
 jobs:
   test-and-build:
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-15]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v6
@@ -21,3 +25,36 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
+
+  installers:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target: win
+            arch: x64
+          - os: macos-15
+            target: mac
+            arch: arm64
+          - os: macos-15-intel
+            target: mac
+            arch: x64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: npm
+      - uses: dtolnay/rust-toolchain@1.80.0
+      - run: npm ci
+      - run: npm run dist:${{ matrix.target }} -- --${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: radiochron-desktop-${{ matrix.target }}-${{ matrix.arch }}
+          path: release/*
+          if-no-files-found: error

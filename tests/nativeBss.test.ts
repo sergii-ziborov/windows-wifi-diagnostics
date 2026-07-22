@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { mergeNativeBssDetails } from '../src/collector/nativeBss';
 import type { EventContext, WindowsNativeBssEntry, WindowsWifiNetwork } from '../src/collector/types';
-import { mapRadioChronNetworks } from '../src/platform/windows/radiochron';
+import { mapRadioChronNetworks } from '../src/platform/rustCore';
 
 const context: EventContext = {
   runId: 'test-run',

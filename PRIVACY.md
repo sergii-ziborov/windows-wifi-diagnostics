@@ -1,6 +1,6 @@
 # Privacy model
 
-Windows Wi-Fi Diagnostics is local-first and has no background analytics or telemetry.
+RadioChron Desktop is local-first and has no background analytics or telemetry.
 
 ## Data read locally
 
@@ -8,15 +8,20 @@ Depending on the action selected, the app can read:
 
 - Wi-Fi interface state, SSID, BSSID, signal, channel, and security metadata;
 - local IP configuration, gateway, DNS, and neighbor-cache entries;
-- Windows WLAN AutoConfig events;
+- Windows WLAN AutoConfig events when running on Windows;
 - saved Wi-Fi profile details, including a password only after an explicit reveal action;
 - host and adapter identity when the experimental scan-identity panel is used.
 
-During source development, captures and SQLite state are stored under `data/`. That directory is excluded from Git and must be treated as sensitive.
+Installed builds keep state in Electron's per-user application-data directory.
+Source development may also use `data/`; that directory is excluded from Git
+and must be treated as sensitive.
 
 ## Network activity
 
-- Baseline collection and passive LAN inventory use local Windows state.
+- Baseline collection uses native RadioChron collectors. Windows uses the WLAN
+  API; macOS uses CoreWLAN and requires Location Services for SSID/BSSID access.
+- The documentation screenshot mode uses synthetic fixtures and does not query
+  the host radio, addresses, neighbor cache, profile secrets or computer name.
 - The internet reachability check contacts Cloudflare only after the operator requests it.
 - Poll and active LAN profiles send traffic to the local network and are visibly labelled before use.
 - Optional Codex or Claude review passes selected evidence to the configured external CLI provider. The provider's own privacy policy then applies.

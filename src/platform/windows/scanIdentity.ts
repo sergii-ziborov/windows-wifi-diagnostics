@@ -32,7 +32,7 @@ type ScanIdentityApplyOptions = ScanIdentityChangeRequest & {
   clearMacAddress?: boolean;
 };
 
-const DEFAULT_SCAN_IDENTITY_NAME = 'MONITOR-SCOUT';
+const DEFAULT_SCAN_IDENTITY_NAME = 'RADIOCHRON-SCOUT';
 const DEFAULT_STATE_FILE = resolve('data', 'scan-identity-originals.json');
 
 export async function getWindowsScanIdentityState(options: {

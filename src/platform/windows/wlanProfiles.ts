@@ -6,6 +6,9 @@ export async function getWindowsWifiProfileSecret(options: { ssid: string }): Pr
   if (!ssid) {
     return emptyProfileSecret(null, 'SSID is required');
   }
+  if (process.platform !== 'win32') {
+    return emptyProfileSecret(ssid, 'Saved Wi-Fi profile secrets are only available on Windows.');
+  }
 
   try {
     const { stdout } = await runNetsh(['wlan', 'show', 'profile', `name=${ssid}`, 'key=clear'], 8000);
