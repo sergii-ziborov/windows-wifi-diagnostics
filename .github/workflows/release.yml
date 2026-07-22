@@ -45,7 +45,7 @@ jobs:
       - name: Write checksums
         shell: pwsh
         run: Get-ChildItem release -File -Filter *.exe | ForEach-Object { "$(($_ | Get-FileHash -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content release/SHA256SUMS-windows.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: installer-windows-x64
           path: |
@@ -91,7 +91,7 @@ jobs:
       - name: Write checksums
         shell: bash
         run: shasum -a 256 release/*.dmg release/*.zip > release/SHA256SUMS-macos-${{ matrix.arch }}.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: installer-macos-${{ matrix.arch }}
           path: |
@@ -106,7 +106,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           pattern: installer-*
           path: artifacts
