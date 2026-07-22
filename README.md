@@ -9,8 +9,10 @@ This is a separate Electron repository. It imports the public Node API from
 the [`radiochron`](https://github.com/sergii-ziborov/radiochron) Rust IoT core
 through its packaged native Node adapter.
 
-> Open-source beta. Installers are built in CI but are not published as a
-> release yet.
+> Open-source beta. Download the unsigned test installers from
+> [`desktop-v0.1.0-beta.1`](https://github.com/sergii-ziborov/radiochron-electron/releases/tag/desktop-v0.1.0-beta.1).
+> Windows SmartScreen and macOS Gatekeeper may warn because this beta is not
+> code-signed or notarized yet.
 
 ## Screenshots
 
@@ -126,10 +128,13 @@ npm run dist:mac -- --x64
 
 Outputs are written to `release/`. The native Node adapter and its provenance
 file are embedded in the packaged resources. GitHub Actions builds Windows x64,
-Intel Mac, and Apple Silicon installer artifacts without creating a release.
+Intel Mac, and Apple Silicon installer artifacts. The current unsigned beta is
+available for [Windows x64](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.1.0-beta.1/RadioChron-Desktop-0.1.0-Windows-x64.exe),
+[Apple Silicon](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.1.0-beta.1/RadioChron-Desktop-0.1.0-macOS-Apple-Silicon.dmg),
+and [Intel Mac](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.1.0-beta.1/RadioChron-Desktop-0.1.0-macOS-Intel.dmg).
 
-Unsigned local artifacts are for testing only. Public distribution still needs
-Windows code signing and macOS Developer ID signing/notarization.
+These beta installers are for testing. Windows code signing and macOS Developer
+ID signing/notarization are still required for a production release.
 
 A matching `v<package-version>` tag starts the production release workflow. It
 fails closed without `WIN_CSC_LINK`/`WIN_CSC_KEY_PASSWORD` or the macOS
@@ -156,10 +161,6 @@ See [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md).
   library over the core.
 - [`radiochron-electron`](https://github.com/sergii-ziborov/radiochron-electron)
   — this separate desktop application.
-- [`radiochron-agent`](https://github.com/sergii-ziborov/radiochron-agent) —
-  offline-first service and exporters.
-- [`radiochron-fleet`](https://github.com/sergii-ziborov/radiochron-fleet) —
-  self-hosted fleet control plane.
 - [`radiochron-site`](https://github.com/sergii-ziborov/radiochron-site) — website
   source.
 

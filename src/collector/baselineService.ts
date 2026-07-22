@@ -152,7 +152,10 @@ export async function collectBaseline(
       }
     }
 
-    if (Date.now() + options.intervalSeconds * 1000 > stopAt) {
+    // A sample scheduled exactly at the duration boundary belongs to the next
+    // interval. Using `>` made fast CI hosts sleep to that boundary and collect
+    // a second sample for a 1 s duration / 1 s interval run.
+    if (Date.now() + options.intervalSeconds * 1000 >= stopAt) {
       break;
     }
     await sleep(options.intervalSeconds * 1000, abortSignal);
