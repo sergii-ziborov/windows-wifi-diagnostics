@@ -57,7 +57,7 @@
     "baseline:sample": "tsx src/cli/baseline.ts collect --duration 60 --interval 5"
   },
   "dependencies": {
-    "radiochron": "https://github.com/sergii-ziborov/radiochron-js/archive/9e7ad7bffccdb42d2581780fa1c4013c00738037.tar.gz",
+    "radiochron": "https://github.com/sergii-ziborov/radiochron-js/archive/dce9c9fd1026382d77fec6b06263180d3a30498c.tar.gz",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

@@ -21,7 +21,7 @@ import {
   restoreWindowsScanIdentity
 } from '../platform/windows/scanIdentity';
 import { getWindowsWifiProfileSecret } from '../platform/windows/wlanProfiles';
-import { disposeRadioChronCoreClient } from 'radiochron';
+import { disposeRadioChronCoreClient, getRadioChronCoreClient } from 'radiochron';
 import {
   demoBaselineEvents,
   demoBaselineNetworks,
@@ -37,6 +37,7 @@ import type {
   AiThreatReviewResult,
   AiThreatReviewScope,
   BaselineCollectionCancelResult,
+  BaselineNetworksResult,
   CollectResult,
   ConnectivityCheckResult,
   DetectorAlert,
@@ -135,6 +136,8 @@ ipcMain.handle('monitor:capabilities', async () => ({
     ai_threat_review: true,
     wifi_profile_secret: process.platform === 'win32',
     connectivity_check: true,
+    radiochron_analysis: true,
+    radiochron_chronicle: true,
     local_network_scan: process.platform === 'win32',
     scan_identity: process.platform === 'win32',
     scan_locations: true,
@@ -148,15 +151,17 @@ ipcMain.handle('baseline:networks', async (_event, options?: {
   useDeviceIntelligence?: unknown;
   persistInventory?: unknown;
   location?: unknown;
-}) =>
-  DEMO_MODE ? demoBaselineNetworks() : getBaselineNetworks({
+}) => {
+  if (DEMO_MODE) return demoBaselineNetworks();
+  const result = await getBaselineNetworks({
     refreshScan: options?.refreshScan === true,
     scanSettleMs: boundedInteger(options?.scanSettleMs, 4500, 0, 10_000),
     useDeviceIntelligence: options?.useDeviceIntelligence === false ? false : undefined,
     persistInventory: options?.persistInventory === false ? false : true,
     location: readOptionalScanLocation(options?.location)
-  })
-);
+  });
+  return withRadioChronAnalysis(result);
+});
 ipcMain.handle(
   'connectivity:check',
   async (_event, options?: { downloadBytes?: unknown; timeoutMs?: unknown }): Promise<ConnectivityCheckResult> =>
@@ -164,6 +169,15 @@ ipcMain.handle(
       downloadBytes: boundedInteger(options?.downloadBytes, 750_000, 128_000, 5_000_000),
       timeoutMs: boundedInteger(options?.timeoutMs, 8_000, 2_000, 20_000)
     })
+);
+ipcMain.handle('radiochron:analysis', async (_event, options?: { refreshScan?: unknown }) =>
+  getRadioChronCoreClient().analyze({ refreshScan: options?.refreshScan === true })
+);
+ipcMain.handle('radiochron:chronicle-status', async () => getRadioChronCoreClient().chronicle.status());
+ipcMain.handle('radiochron:chronicle-recent', async (_event, options?: { maxEntries?: unknown }) =>
+  getRadioChronCoreClient().chronicle.recent({
+    maxEntries: boundedInteger(options?.maxEntries, 100, 1, 2_000)
+  })
 );
 ipcMain.handle(
   'local-network:scan',
@@ -738,10 +752,41 @@ function readSsid(value: unknown): string {
   return trimmed;
 }
 
-app.whenReady().then(() => {
+async function withRadioChronAnalysis(result: BaselineNetworksResult): Promise<BaselineNetworksResult> {
+  try {
+    return {
+      ...result,
+      radiochron_analysis: await getRadioChronCoreClient().analyze(),
+      radiochron_analysis_error: null
+    };
+  } catch (error) {
+    return {
+      ...result,
+      radiochron_analysis: null,
+      radiochron_analysis_error: error instanceof Error ? error.message : String(error)
+    };
+  }
+}
+
+async function startDesktopChronicle(): Promise<void> {
+  const chronicleDir = join(app.getPath('userData'), 'chronicle');
+  await mkdir(chronicleDir, { recursive: true });
+  process.env.RADIOCHRON_CHRONICLE_PATH = join(chronicleDir, 'wifi-events.jsonl');
+  await getRadioChronCoreClient().chronicle.start({ intervalSeconds: 5, signalThresholdDb: 5 });
+}
+
+app.whenReady().then(async () => {
   session.defaultSession.setPermissionRequestHandler((_webContents, permission, callback) => {
     callback(permission === 'geolocation');
   });
+
+  if (!DEMO_MODE) {
+    try {
+      await startDesktopChronicle();
+    } catch (error) {
+      console.warn('RadioChron chronicle could not start', error);
+    }
+  }
 
   createWindow();
 

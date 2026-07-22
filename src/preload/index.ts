@@ -18,6 +18,11 @@ contextBridge.exposeInMainWorld('monitor', {
     ipcRenderer.invoke('baseline:networks', options),
   runConnectivityCheck: (options?: { downloadBytes?: number; timeoutMs?: number }) =>
     ipcRenderer.invoke('connectivity:check', options),
+  getRadioChronAnalysis: (options?: { refreshScan?: boolean }) =>
+    ipcRenderer.invoke('radiochron:analysis', options),
+  getRadioChronChronicleStatus: () => ipcRenderer.invoke('radiochron:chronicle-status'),
+  getRadioChronChronicleRecent: (options?: { maxEntries?: number }) =>
+    ipcRenderer.invoke('radiochron:chronicle-recent', options),
   scanLocalNetwork: (options: { mode: 'passive' | 'poll' | 'active'; snapshot?: unknown | null }) =>
     ipcRenderer.invoke('local-network:scan', options),
   getScanIdentityState: (options?: { interfaceName?: string | null; adapterName?: string | null }) =>

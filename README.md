@@ -29,6 +29,9 @@ administered, and IP addresses come from documentation-only ranges.
 
 - Native interface/association status and nearby BSS inventory through
   `radiochron-js` and the RadioChron Rust core.
+- Typed Rust-core analysis, radio/authentication/DHCP/DNS/TCP/Internet path
+  diagnosis, and an automatically started change-only local chronicle through
+  `radiochron-js` (never through MCP).
 - Windows Native WLAN and macOS CoreWLAN collectors with raw 802.11
   Information Element summaries, RSSI, channel, band, and security evidence.
 - Saved baseline runs, comparisons, reconnect/environment observations,
@@ -76,9 +79,9 @@ radiochron (Rust IoT core)
 ```
 
 The native adapter keeps the JavaScript runtime and Rust collector
-process-isolated. Its current API covers `ping`, `wifi_status`, `wifi_scan`, and
-`wifi_networks`. Other Node applications can use the same `radiochron-js`
-package without Electron.
+process-isolated. Electron uses the typed status, scan, BSS inventory, analysis,
+connectivity, sampling, and chronicle APIs. Other Node applications can use the
+same `radiochron-js` package without Electron. MCP is not part of this process.
 
 ## Development
 
@@ -127,6 +130,11 @@ Intel Mac, and Apple Silicon installer artifacts without creating a release.
 
 Unsigned local artifacts are for testing only. Public distribution still needs
 Windows code signing and macOS Developer ID signing/notarization.
+
+A matching `v<package-version>` tag starts the production release workflow. It
+fails closed without `WIN_CSC_LINK`/`WIN_CSC_KEY_PASSWORD` or the macOS
+Developer ID and App Store Connect API-key secrets, verifies both architectures,
+writes SHA-256 manifests, and creates a draft GitHub release for final review.
 
 ## Privacy and safety
 

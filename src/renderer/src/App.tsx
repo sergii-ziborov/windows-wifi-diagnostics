@@ -7023,6 +7023,9 @@ function NearbyScanStatus({
             <span>IPv4 {formatList(snapshot?.ipv4_addresses ?? [])}</span>
             <span>GW {valueOrUnknown(snapshot?.default_gateway ?? null)}</span>
             <span>SSID {valueOrUnknown(snapshot?.ssid ?? null)}</span>
+            {networks?.radiochron_analysis ? (
+              <span>RF findings {networks.radiochron_analysis.analysis.findings.length}</span>
+            ) : null}
           </span>
           <span className={`network-live-chip internet-check-${connectivityTone}`}>
             <strong>Internet</strong>
@@ -12331,12 +12334,29 @@ function formatConnectivitySummary(state: ConnectivityCheckState, ageSeconds: nu
 
   const parts = [
     formatConnectivityStatus(state.result.status),
+    formatFailedConnectivityStage(state.result),
     state.result.download_mbps === null ? 'speed unknown' : `${state.result.download_mbps} Mbps down`,
     state.result.latency_ms === null ? 'latency unknown' : `${state.result.latency_ms} ms`,
     ageSeconds === null ? null : `checked ${formatAge(ageSeconds)}`
   ].filter(Boolean);
 
   return parts.join(' | ');
+}
+
+function formatFailedConnectivityStage(result: ConnectivityCheckResult): string | null {
+  const report = result.radiochron_diagnosis;
+  if (!report) return result.radiochron_error ? 'native path unavailable' : null;
+  const stages = [
+    ['radio', report.radio],
+    ['authentication', report.authentication],
+    ['DHCP', report.dhcp],
+    ['gateway', report.gateway],
+    ['DNS', report.dns],
+    ['TCP', report.tcp],
+    ['internet', report.internet]
+  ] as const;
+  const failed = stages.find(([, stage]) => stage.status === 'fail');
+  return failed ? `${failed[0]} failed` : 'path verified';
 }
 
 function formatConnectivityStatus(value: ConnectivityCheckResult['status']): string {

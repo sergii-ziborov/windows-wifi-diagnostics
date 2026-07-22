@@ -1,3 +1,5 @@
+import type { RadioChronAnalysisResult, RadioChronConnectivityReport } from 'radiochron';
+
 export type CollectorSourceName =
   | 'radiochron_native_status'
   | 'radiochron_native_wifi_scan'
@@ -543,6 +545,8 @@ export interface ConnectivityCheckResult {
   download_mbps: number | null;
   download_bytes: number;
   download_elapsed_ms: number | null;
+  radiochron_diagnosis: RadioChronConnectivityReport | null;
+  radiochron_error: string | null;
   error: string | null;
 }
 
@@ -814,6 +818,8 @@ export interface BaselineNetworksResult {
   bssid_count: number;
   mac_summary: MacIntelligenceSummary;
   scan_location: ScanLocationRecord | null;
+  radiochron_analysis?: RadioChronAnalysisResult | null;
+  radiochron_analysis_error?: string | null;
   networks: WindowsWifiNetwork[];
 }
 

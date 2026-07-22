@@ -8,29 +8,13 @@ import type {
   WindowsWifiSnapshot
 } from '../collector/types';
 import { getRadioChronCoreClient } from 'radiochron';
+import type { RadioChronWifiStatus } from 'radiochron';
 
 const BSS_TIMEOUT_MS = 20_000;
 const SCAN_TIMEOUT_MS = 20_000;
 const BSS_CACHE_MS = 1_000;
 
-interface CoreWifiStatus {
-  interface: {
-    guid: string;
-    description: string;
-    state: string;
-  };
-  connection?: {
-    profile_name?: string | null;
-    ssid?: string | null;
-    bssid?: string | null;
-    phy_type?: string | null;
-    signal_quality?: number | null;
-    rssi_dbm_estimate?: number | null;
-    rx_rate_kbps?: number | null;
-    tx_rate_kbps?: number | null;
-  } | null;
-  connection_error?: string | null;
-}
+type CoreWifiStatus = RadioChronWifiStatus;
 
 interface CoreRsnDetails {
   group_cipher?: string | null;
@@ -92,8 +76,7 @@ export async function getCoreSourceStatus(): Promise<CollectorSourceStatus> {
 }
 
 export async function getCoreWifiStatuses(): Promise<CoreWifiStatus[]> {
-  const payload = await getRadioChronCoreClient().call('wifi_status');
-  return Array.isArray(payload) ? (payload as CoreWifiStatus[]) : [];
+  return getRadioChronCoreClient().status();
 }
 
 export async function getCoreWifiSnapshots(context: EventContext): Promise<WindowsWifiSnapshot[]> {
@@ -102,10 +85,8 @@ export async function getCoreWifiSnapshots(context: EventContext): Promise<Windo
 
 export async function requestNativeWifiScan(): Promise<CollectorSourceStatus> {
   try {
-    const payload = (await getRadioChronCoreClient().call('wifi_scan', {}, SCAN_TIMEOUT_MS)) as {
-      interfaces_scanning?: number;
-    } | null;
-    const interfaces = payload?.interfaces_scanning ?? 0;
+    const payload = await getRadioChronCoreClient().scan(SCAN_TIMEOUT_MS);
+    const interfaces = payload.interfaces_scanning;
     bssCache = null;
     return {
       name: 'radiochron_native_wifi_scan',
@@ -159,8 +140,8 @@ async function getCoreNetworks(): Promise<CoreNetworksResponse> {
   }
 
   bssInFlight = getRadioChronCoreClient()
-    .call('wifi_networks', {}, BSS_TIMEOUT_MS)
-    .then((payload) => (payload && typeof payload === 'object' ? payload as CoreNetworksResponse : {}))
+    .networks({ timeoutMs: BSS_TIMEOUT_MS })
+    .then((payload) => payload as CoreNetworksResponse)
     .then((payload) => {
       bssCache = { createdAtMs: Date.now(), payload };
       return payload;

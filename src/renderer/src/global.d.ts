@@ -28,6 +28,11 @@ import type {
   WindowsWifiNetwork,
   WindowsWifiSnapshot
 } from '../../collector/types';
+import type {
+  RadioChronAnalysisResult,
+  RadioChronChronicleRecent,
+  RadioChronChronicleStatus
+} from 'radiochron';
 
 interface MonitorBridgeCapabilities {
   schema: 'monitor.bridge_capabilities.v1';
@@ -41,6 +46,8 @@ interface MonitorBridgeCapabilities {
     ai_threat_review: boolean;
     wifi_profile_secret: boolean;
     connectivity_check: boolean;
+    radiochron_analysis: boolean;
+    radiochron_chronicle: boolean;
     local_network_scan: boolean;
     scan_identity: boolean;
     scan_locations: boolean;
@@ -61,6 +68,9 @@ declare global {
         location?: ScanLocationInput | null;
       }) => Promise<BaselineNetworksResult>;
       runConnectivityCheck?: (options?: { downloadBytes?: number; timeoutMs?: number }) => Promise<ConnectivityCheckResult>;
+      getRadioChronAnalysis?: (options?: { refreshScan?: boolean }) => Promise<RadioChronAnalysisResult>;
+      getRadioChronChronicleStatus?: () => Promise<RadioChronChronicleStatus>;
+      getRadioChronChronicleRecent?: (options?: { maxEntries?: number }) => Promise<RadioChronChronicleRecent>;
       scanLocalNetwork?: (options: {
         mode: LocalNetworkScanMode;
         snapshot?: WindowsWifiSnapshot | null;

@@ -1,4 +1,6 @@
 import { performance } from 'node:perf_hooks';
+import { diagnoseConnectivity } from 'radiochron';
+import type { RadioChronConnectivityOptions, RadioChronConnectivityReport } from 'radiochron';
 import type { ConnectivityCheckResult } from './types';
 
 const TRACE_URL = 'https://cloudflare.com/cdn-cgi/trace';
@@ -10,6 +12,7 @@ export interface ConnectivityCheckOptions {
   downloadBytes?: number;
   timeoutMs?: number;
   fetchImpl?: typeof fetch;
+  diagnoseImpl?: (options?: RadioChronConnectivityOptions) => Promise<RadioChronConnectivityReport>;
   now?: Date;
 }
 
@@ -24,7 +27,22 @@ export async function checkInternetConnectivity(
   let latencyMs: number | null = null;
   let downloadMbps: number | null = null;
   let downloadElapsedMs: number | null = null;
+  let radiochronDiagnosis: RadioChronConnectivityReport | null = null;
+  let radiochronError: string | null = null;
   const errors: string[] = [];
+  const diagnosisPromise = (options.diagnoseImpl ?? diagnoseConnectivity)({
+    dnsName: 'cloudflare.com',
+    tcpTarget: 'cloudflare.com:443',
+    internetTarget: 'cloudflare.com:443',
+    captivePortalUrl: TRACE_URL,
+    captivePortalExpectedStatus: 200,
+    tlsTarget: 'cloudflare.com:443',
+    probeTimeoutMs: Math.min(timeoutMs, 5_000),
+    timeoutMs: Math.max(20_000, timeoutMs * 4)
+  }).then(
+    (report) => ({ report, error: null as string | null }),
+    (error: unknown) => ({ report: null, error: formatConnectivityError(error) })
+  );
 
   try {
     const trace = await timedFetchText(fetchImpl, TRACE_URL, timeoutMs);
@@ -42,8 +60,19 @@ export async function checkInternetConnectivity(
     errors.push(`download: ${formatConnectivityError(error)}`);
   }
 
-  const status: ConnectivityCheckResult['status'] =
-    latencyMs === null && downloadMbps === null ? 'offline' : errors.length > 0 ? 'degraded' : 'online';
+  const diagnosis = await diagnosisPromise;
+  radiochronDiagnosis = diagnosis.report;
+  radiochronError = diagnosis.error;
+  if (radiochronError) {
+    errors.push(`radiochron: ${radiochronError}`);
+  }
+
+  const nativePathFailed = radiochronDiagnosis ? hasFailedConnectivityStage(radiochronDiagnosis) : false;
+  const status: ConnectivityCheckResult['status'] = latencyMs === null && downloadMbps === null
+    ? 'offline'
+    : errors.length > 0 || nativePathFailed
+      ? 'degraded'
+      : 'online';
 
   return {
     schema: 'monitor.connectivity_check.v1',
@@ -55,8 +84,22 @@ export async function checkInternetConnectivity(
     download_mbps: downloadMbps,
     download_bytes: downloadBytes,
     download_elapsed_ms: downloadElapsedMs,
+    radiochron_diagnosis: radiochronDiagnosis,
+    radiochron_error: radiochronError,
     error: errors.length > 0 ? errors.join('; ') : null
   };
+}
+
+function hasFailedConnectivityStage(report: RadioChronConnectivityReport): boolean {
+  return [
+    report.radio,
+    report.authentication,
+    report.dhcp,
+    report.gateway,
+    report.dns,
+    report.tcp,
+    report.internet
+  ].some((stage) => stage.status === 'fail');
 }
 
 async function timedFetchText(
