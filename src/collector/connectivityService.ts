@@ -73,7 +73,7 @@ async function timedFetchText(
   const text = await response.text();
   return {
     text,
-    elapsedMs: Math.round(performance.now() - startedAt)
+    elapsedMs: elapsedMilliseconds(startedAt)
   };
 }
 
@@ -91,7 +91,7 @@ async function timedDownload(
   const buffer = await response.arrayBuffer();
   return {
     bytes: buffer.byteLength,
-    elapsedMs: Math.round(performance.now() - startedAt)
+    elapsedMs: elapsedMilliseconds(startedAt)
   };
 }
 
@@ -135,4 +135,8 @@ function formatConnectivityError(error: unknown): string {
 function roundTo(value: number, digits: number): number {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
+}
+
+function elapsedMilliseconds(startedAt: number): number {
+  return Math.max(1, Math.round(performance.now() - startedAt));
 }
