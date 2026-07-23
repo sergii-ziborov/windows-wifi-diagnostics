@@ -11,6 +11,7 @@ import {
   type WheelEvent
 } from 'react';
 import { createPortal } from 'react-dom';
+import { BluetoothPanel } from './BluetoothPanel';
 import accessPointVisualUrl from './assets/device-visuals/access-point.svg';
 import hiddenNetworkVisualUrl from './assets/device-visuals/hidden-network.svg';
 import hotspotVisualUrl from './assets/device-visuals/hotspot.svg';
@@ -360,7 +361,7 @@ interface SourceControls {
   nearbyAps: boolean;
 }
 
-type AppTab = 'overview' | 'map' | 'network' | 'reports' | 'channels';
+type AppTab = 'overview' | 'map' | 'network' | 'bluetooth' | 'reports' | 'channels';
 
 type SourceControlKey = keyof SourceControls;
 
@@ -556,6 +557,7 @@ const APP_TABS: Array<{ key: AppTab; label: string }> = [
   { key: 'overview', label: 'Overview' },
   { key: 'map', label: 'Map' },
   { key: 'network', label: 'Network' },
+  { key: 'bluetooth', label: 'Bluetooth' },
   { key: 'reports', label: 'Reports' },
   { key: 'channels', label: 'Channels' }
 ];
@@ -2445,6 +2447,8 @@ export function App() {
         />
       </section>
       ) : null}
+
+      {activeTab === 'bluetooth' ? <BluetoothPanel demoMode={demoMode} /> : null}
 
       {activeTab === 'channels' ? (
       <section className="channels-grid">

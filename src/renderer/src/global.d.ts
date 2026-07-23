@@ -33,6 +33,7 @@ import type {
   RadioChronChronicleRecent,
   RadioChronChronicleStatus
 } from 'radiochron';
+import type { DesktopBleScanResult } from '../../platform/radiochronBle';
 
 interface MonitorBridgeCapabilities {
   schema: 'monitor.bridge_capabilities.v1';
@@ -48,6 +49,7 @@ interface MonitorBridgeCapabilities {
     connectivity_check: boolean;
     radiochron_analysis: boolean;
     radiochron_chronicle: boolean;
+    radiochron_ble: boolean;
     local_network_scan: boolean;
     scan_identity: boolean;
     scan_locations: boolean;
@@ -71,6 +73,8 @@ declare global {
       getRadioChronAnalysis?: (options?: { refreshScan?: boolean }) => Promise<RadioChronAnalysisResult>;
       getRadioChronChronicleStatus?: () => Promise<RadioChronChronicleStatus>;
       getRadioChronChronicleRecent?: (options?: { maxEntries?: number }) => Promise<RadioChronChronicleRecent>;
+      scanBluetooth?: (options?: { durationMs?: number; zone?: string | null }) => Promise<DesktopBleScanResult>;
+      resetBluetoothTracker?: () => Promise<{ reset: true }>;
       scanLocalNetwork?: (options: {
         mode: LocalNetworkScanMode;
         snapshot?: WindowsWifiSnapshot | null;

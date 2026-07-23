@@ -1,8 +1,8 @@
 # RadioChron Desktop
 
 Local-first Windows and macOS desktop diagnostics for recording Wi-Fi state,
-comparing observations, and turning transient network problems into evidence
-for a support ticket.
+tracking nearby Bluetooth Low Energy identities, comparing observations, and
+turning transient network problems into evidence for a support ticket.
 
 This is a separate Electron repository. It imports the public Node API from
 [`radiochron-js`](https://github.com/sergii-ziborov/radiochron-js), which links
@@ -25,6 +25,8 @@ administered, and IP addresses come from documentation-only ranges.
 
 ![RadioChron Desktop network controls with synthetic addresses](docs/screenshots/radiochron-desktop-network.png)
 
+![RadioChron Desktop Bluetooth history with synthetic beacons](docs/screenshots/radiochron-desktop-bluetooth.png)
+
 ![RadioChron Desktop channel pressure view with synthetic access points](docs/screenshots/radiochron-desktop-channels.png)
 
 ## What is implemented
@@ -36,6 +38,10 @@ administered, and IP addresses come from documentation-only ranges.
   `radiochron-js` (never through MCP).
 - Windows Native WLAN and macOS CoreWLAN collectors with raw 802.11
   Information Element summaries, RSSI, channel, band, and security evidence.
+- Native BLE scanning through Windows WinRT and macOS CoreBluetooth, with
+  local identity history, persistence/disappearance, possible-clone and beacon
+  flood evidence. Findings always include limitations; RSSI is not presented
+  as physical distance.
 - Saved baseline runs, comparisons, reconnect/environment observations,
   evidence timelines, and diagnostic bundles.
 - AP/device inventory, a relative RF map, channel-pressure view, passive
@@ -53,6 +59,7 @@ or real AP nodes remain readable instead of collapsing around the center.
 |---|---:|---:|---:|
 | Current association | yes | yes | yes |
 | Nearby BSS + beacon metadata | yes | yes | yes |
+| BLE advertisements + local history | yes | yes | yes |
 | Saved RadioChron baselines | yes | yes | yes |
 | WLAN AutoConfig event history | yes | no OS equivalent | no OS equivalent |
 | Saved Wi-Fi key / scan identity controls | yes | no | no |
@@ -60,7 +67,8 @@ or real AP nodes remain readable instead of collapsing around the center.
 
 Recent macOS versions require Location Services before CoreWLAN exposes SSID,
 BSSID, and scan identity. The bundle includes the usage description; permission
-must still be granted interactively. Public macOS downloads must be signed with
+must still be granted interactively. Bluetooth access also requires an
+interactive macOS permission grant. Public macOS downloads must be signed with
 Developer ID and notarized.
 
 ## Architecture
@@ -75,19 +83,20 @@ radiochron-js (Node/npm library)
         | packaged radiochron-node-bridge
         v
 radiochron (Rust IoT core)
-        |-- Windows Native WLAN
-        |-- Linux nl80211
-        `-- macOS CoreWLAN
+        |-- portable Wi-Fi + BLE models/history/detectors
+        |-- Windows Native WLAN + WinRT BLE
+        |-- Linux nl80211 + BlueZ BLE
+        `-- macOS CoreWLAN + CoreBluetooth
 ```
 
 The native adapter keeps the JavaScript runtime and Rust collector
-process-isolated. Electron uses the typed status, scan, BSS inventory, analysis,
-connectivity, sampling, and chronicle APIs. Other Node applications can use the
+process-isolated. Electron uses the typed Wi-Fi, connectivity, chronicle, BLE
+scan, identity-history and detector APIs. Other Node applications can use the
 same `radiochron-js` package without Electron. MCP is not part of this process.
 
 ## Development
 
-Requirements: Node.js 22.12+ and Rust 1.80+.
+Requirements: Node.js 22.12+ and Rust 1.85+.
 
 ```sh
 npm ci
@@ -109,9 +118,9 @@ npm run screenshots
 ```
 
 `RADIOCHRON_DEMO=1` activates synthetic IPC fixtures. The fixture uses
-`192.0.2.0/24`, `2001:db8::/32`, and locally administered MAC addresses. It
-does not query CoreWLAN, Windows WLAN APIs, profile secrets, neighbor tables,
-or the real computer identity.
+`192.0.2.0/24`, `2001:db8::/32`, invented BLE beacons, and locally administered
+MAC addresses. It does not query CoreWLAN, CoreBluetooth, Windows WLAN/Bluetooth
+APIs, profile secrets, neighbor tables, or the real computer identity.
 
 ## Installers
 

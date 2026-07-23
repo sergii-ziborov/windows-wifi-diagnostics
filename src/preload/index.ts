@@ -23,6 +23,9 @@ contextBridge.exposeInMainWorld('monitor', {
   getRadioChronChronicleStatus: () => ipcRenderer.invoke('radiochron:chronicle-status'),
   getRadioChronChronicleRecent: (options?: { maxEntries?: number }) =>
     ipcRenderer.invoke('radiochron:chronicle-recent', options),
+  scanBluetooth: (options?: { durationMs?: number; zone?: string | null }) =>
+    ipcRenderer.invoke('radiochron:ble-scan', options),
+  resetBluetoothTracker: () => ipcRenderer.invoke('radiochron:ble-reset'),
   scanLocalNetwork: (options: { mode: 'passive' | 'poll' | 'active'; snapshot?: unknown | null }) =>
     ipcRenderer.invoke('local-network:scan', options),
   getScanIdentityState: (options?: { interfaceName?: string | null; adapterName?: string | null }) =>

@@ -22,6 +22,8 @@ import {
 } from '../platform/windows/scanIdentity';
 import { getWindowsWifiProfileSecret } from '../platform/windows/wlanProfiles';
 import { disposeRadioChronCoreClient, getRadioChronCoreClient } from 'radiochron';
+import { resetRadioChronBle, scanRadioChronBle } from '../platform/radiochronBle';
+import { demoBleScanResult } from '../demo/bleFixtures';
 import {
   demoBaselineEvents,
   demoBaselineNetworks,
@@ -111,7 +113,7 @@ async function captureDemoScreenshots(window: BrowserWindow | null, captureDir: 
       poll();
     })`);
 
-    for (const tab of ['overview', 'map', 'network', 'channels']) {
+    for (const tab of ['overview', 'map', 'network', 'bluetooth', 'channels']) {
       await window.webContents.executeJavaScript(`document.querySelector('[data-app-tab="${tab}"]')?.click()`);
       await new Promise((resolve) => setTimeout(resolve, 450));
       const image = await window.webContents.capturePage();
@@ -138,6 +140,7 @@ ipcMain.handle('monitor:capabilities', async () => ({
     connectivity_check: true,
     radiochron_analysis: true,
     radiochron_chronicle: true,
+    radiochron_ble: true,
     local_network_scan: process.platform === 'win32',
     scan_identity: process.platform === 'win32',
     scan_locations: true,
@@ -178,6 +181,19 @@ ipcMain.handle('radiochron:chronicle-recent', async (_event, options?: { maxEntr
   getRadioChronCoreClient().chronicle.recent({
     maxEntries: boundedInteger(options?.maxEntries, 100, 1, 2_000)
   })
+);
+ipcMain.handle(
+  'radiochron:ble-scan',
+  async (_event, options?: { durationMs?: unknown; zone?: unknown }) =>
+    DEMO_MODE
+      ? demoBleScanResult()
+      : scanRadioChronBle({
+          durationMs: boundedInteger(options?.durationMs, 4_000, 250, 30_000),
+          zone: readOptionalText(options?.zone, 120)
+        })
+);
+ipcMain.handle('radiochron:ble-reset', async () =>
+  DEMO_MODE ? { reset: true as const } : resetRadioChronBle()
 );
 ipcMain.handle(
   'local-network:scan',

@@ -38,6 +38,7 @@ mac:
   extendInfo:
     NSLocationUsageDescription: RadioChron uses location permission only so macOS can expose nearby Wi-Fi SSID and BSSID data.
     NSLocationWhenInUseUsageDescription: RadioChron uses location permission only so macOS can expose nearby Wi-Fi SSID and BSSID data.
+    NSBluetoothAlwaysUsageDescription: RadioChron scans nearby Bluetooth Low Energy advertisements locally to build device history and surface evidence-based changes.
 dmg:
   backgroundColor: '#0d0d08'
   contents:

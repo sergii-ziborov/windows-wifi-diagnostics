@@ -15,7 +15,16 @@ const source = join(dirname(crate), 'target', 'release', executable);
 const binDir = join(root, 'native', 'bin');
 const destination = join(binDir, executable);
 
-execFileSync('cargo', ['build', '--locked', '--release', '--manifest-path', crate], {
+const cargoArgs = [
+  ...(process.platform === 'win32' ? ['+stable-x86_64-pc-windows-msvc'] : []),
+  'build',
+  '--locked',
+  '--release',
+  '--manifest-path',
+  crate
+];
+
+execFileSync('cargo', cargoArgs, {
   cwd: root,
   stdio: 'inherit'
 });

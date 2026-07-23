@@ -1,8 +1,8 @@
 {
   "name": "radiochron-electron",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "private": true,
-  "description": "Desktop UI for RadioChron — local-first Windows and macOS Wi-Fi diagnostics, evidence timelines, and network inventory",
+  "description": "Desktop UI for local-first Wi-Fi diagnostics, BLE history, evidence timelines, and network inventory",
   "author": "Sergii Ziborov",
   "license": "MIT",
   "repository": {
@@ -18,6 +18,8 @@
     "windows",
     "macos",
     "wifi",
+    "bluetooth",
+    "ble",
     "network-diagnostics",
     "wireless-security",
     "rust",
@@ -57,7 +59,7 @@
     "baseline:sample": "tsx src/cli/baseline.ts collect --duration 60 --interval 5"
   },
   "dependencies": {
-    "radiochron": "https://github.com/sergii-ziborov/radiochron-js/archive/cd490acb7e70718d31cadcad04002335412303bb.tar.gz",
+    "radiochron": "https://github.com/sergii-ziborov/radiochron-js/archive/5d2d8cbe6439fd4cf791f88933d9d0f04e28e66f.tar.gz",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
