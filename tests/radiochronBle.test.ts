@@ -58,5 +58,8 @@ describe('RadioChron BLE desktop adapter', () => {
     expect(demo.scan.advertisements).toHaveLength(3);
     expect(demo.scan.advertisements.every((item) => item.local_name?.startsWith('Mock'))).toBe(true);
     expect(demo.scan.advertisements.every((item) => item.address.startsWith('02:00:00:'))).toBe(true);
+    expect(demo.analytics_history.sessions).toHaveLength(12);
+    expect(demo.analytics_history.sessions.flatMap((session) => session.points)
+      .every((point) => point.local_name?.startsWith('Mock'))).toBe(true);
   });
 });

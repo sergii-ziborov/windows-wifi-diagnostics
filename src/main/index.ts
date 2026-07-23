@@ -23,7 +23,13 @@ import {
 import { getWindowsWifiProfileSecret } from '../platform/windows/wlanProfiles';
 import { disposeRadioChronCoreClient, getRadioChronCoreClient } from 'radiochron';
 import { resetRadioChronBle, scanRadioChronBle } from '../platform/radiochronBle';
-import { demoBleScanResult } from '../demo/bleFixtures';
+import {
+  appendBleHistory,
+  clearBleHistory,
+  readBleHistory,
+  type DesktopBleViewResult
+} from '../platform/bleHistory';
+import { demoBleHistory, demoBleScanResult } from '../demo/bleFixtures';
 import {
   demoBaselineEvents,
   demoBaselineNetworks,
@@ -114,11 +120,23 @@ async function captureDemoScreenshots(window: BrowserWindow | null, captureDir: 
     })`);
 
     for (const tab of ['overview', 'map', 'network', 'bluetooth', 'channels']) {
-      await window.webContents.executeJavaScript(`document.querySelector('[data-app-tab="${tab}"]')?.click()`);
+      await window.webContents.executeJavaScript(
+        `document.querySelector('[data-radio-mode="${tab === 'bluetooth' ? 'bluetooth' : 'wifi'}"]')?.click()`
+      );
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      if (tab !== 'bluetooth') {
+        await window.webContents.executeJavaScript(`document.querySelector('[data-app-tab="${tab}"]')?.click()`);
+      }
       await new Promise((resolve) => setTimeout(resolve, 450));
       const image = await window.webContents.capturePage();
       await writeFile(join(captureDir, `radiochron-desktop-${tab}.png`), image.toPNG());
     }
+    await window.webContents.executeJavaScript(`document.querySelector('[data-radio-mode="bluetooth"]')?.click()`);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    await window.webContents.executeJavaScript(`document.querySelector('[data-bluetooth-view="analytics"]')?.click()`);
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    const analyticsImage = await window.webContents.capturePage();
+    await writeFile(join(captureDir, 'radiochron-desktop-bluetooth-analytics.png'), analyticsImage.toPNG());
     app.quit();
   } catch (error) {
     console.error('RadioChron demo screenshot capture failed', error);
@@ -184,17 +202,29 @@ ipcMain.handle('radiochron:chronicle-recent', async (_event, options?: { maxEntr
 );
 ipcMain.handle(
   'radiochron:ble-scan',
-  async (_event, options?: { durationMs?: unknown; zone?: unknown }) =>
-    DEMO_MODE
-      ? demoBleScanResult()
-      : scanRadioChronBle({
-          durationMs: boundedInteger(options?.durationMs, 4_000, 250, 30_000),
-          zone: readOptionalText(options?.zone, 120)
-        })
+  async (_event, options?: { durationMs?: unknown; zone?: unknown }): Promise<DesktopBleViewResult> => {
+    if (DEMO_MODE) return demoBleScanResult();
+    const zone = readOptionalText(options?.zone, 120);
+    const result = await scanRadioChronBle({
+      durationMs: boundedInteger(options?.durationMs, 4_000, 250, 30_000),
+      zone
+    });
+    return {
+      ...result,
+      analytics_history: await appendBleHistory(desktopBleHistoryPath(), result, zone)
+    };
+  }
 );
-ipcMain.handle('radiochron:ble-reset', async () =>
-  DEMO_MODE ? { reset: true as const } : resetRadioChronBle()
+ipcMain.handle(
+  'radiochron:ble-history',
+  async () => DEMO_MODE ? demoBleHistory() : readBleHistory(desktopBleHistoryPath())
 );
+ipcMain.handle('radiochron:ble-reset', async () => {
+  if (DEMO_MODE) return { reset: true as const };
+  const result = await resetRadioChronBle();
+  await clearBleHistory(desktopBleHistoryPath());
+  return result;
+});
 ipcMain.handle(
   'local-network:scan',
   async (_event, options?: { mode?: unknown; snapshot?: unknown }): Promise<LocalNetworkScanResult> =>
@@ -782,6 +812,10 @@ async function withRadioChronAnalysis(result: BaselineNetworksResult): Promise<B
       radiochron_analysis_error: error instanceof Error ? error.message : String(error)
     };
   }
+}
+
+function desktopBleHistoryPath(): string {
+  return join(app.getPath('userData'), 'radiochron', 'ble-history-v1.json');
 }
 
 async function startDesktopChronicle(): Promise<void> {

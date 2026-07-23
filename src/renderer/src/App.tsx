@@ -362,6 +362,7 @@ interface SourceControls {
 }
 
 type AppTab = 'overview' | 'map' | 'network' | 'bluetooth' | 'reports' | 'channels';
+type WifiTab = Exclude<AppTab, 'bluetooth'>;
 
 type SourceControlKey = keyof SourceControls;
 
@@ -553,11 +554,10 @@ const COLLECTION_PRESETS: CollectionPreset[] = [
   { label: '5m', durationSeconds: 300, intervalSeconds: 5, maxEvents: 250 },
   { label: '10m', durationSeconds: 600, intervalSeconds: 5, maxEvents: 500 }
 ];
-const APP_TABS: Array<{ key: AppTab; label: string }> = [
+const WIFI_TABS: Array<{ key: WifiTab; label: string }> = [
   { key: 'overview', label: 'Overview' },
   { key: 'map', label: 'Map' },
   { key: 'network', label: 'Network' },
-  { key: 'bluetooth', label: 'Bluetooth' },
   { key: 'reports', label: 'Reports' },
   { key: 'channels', label: 'Channels' }
 ];
@@ -930,6 +930,7 @@ const INITIAL_NETWORK_FRESHNESS: NetworkFreshnessState = {
 export function App() {
   const [viewState, setViewState] = useState<BaselineViewState>(INITIAL_STATE);
   const [activeTab, setActiveTab] = useState<AppTab>('overview');
+  const lastWifiTabRef = useRef<WifiTab>('overview');
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [analysisState, setAnalysisState] = useState<RunAnalysisViewState>(INITIAL_ANALYSIS_STATE);
   const [sampleState, setSampleState] = useState<SampleCollectState>(INITIAL_SAMPLE_STATE);
@@ -966,10 +967,15 @@ export function App() {
   const lastHistorySnapshotKeyRef = useRef<string | null>(null);
   const collectionPreset = COLLECTION_PRESETS[collectionPresetIndex] ?? COLLECTION_PRESETS[0];
   const demoMode = new URLSearchParams(window.location.search).get('demo') === '1';
+  const radioMode = activeTab === 'bluetooth' ? 'bluetooth' : 'wifi';
 
   useEffect(() => {
     clearLegacyMapLayoutStorage();
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'bluetooth') lastWifiTabRef.current = activeTab;
+  }, [activeTab]);
 
   const mergeNearbyNetworks = useCallback((nextNetworks: BaselineNetworksResult | null): BaselineNetworksResult | null => {
     const merged = mergeNearbyNetworkScan(
@@ -2068,38 +2074,65 @@ export function App() {
         <div className="header-main">
           <h1>RadioChron <span>Desktop</span></h1>
           {demoMode ? <span className="demo-mode-badge">Synthetic demo data</span> : null}
-          <nav className="app-tabs" aria-label="Main sections">
-            {APP_TABS.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                data-app-tab={tab.key}
-                className={activeTab === tab.key ? 'app-tab app-tab-active' : 'app-tab'}
-                onClick={() => setActiveTab(tab.key)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+          <div className="radio-mode-switch" role="group" aria-label="Radio technology">
+            <button
+              type="button"
+              data-radio-mode="wifi"
+              className={radioMode === 'wifi' ? 'active' : ''}
+              aria-pressed={radioMode === 'wifi'}
+              onClick={() => setActiveTab(lastWifiTabRef.current)}
+            >
+              Wi-Fi
+            </button>
+            <button
+              type="button"
+              data-radio-mode="bluetooth"
+              data-app-tab="bluetooth"
+              className={radioMode === 'bluetooth' ? 'active' : ''}
+              aria-pressed={radioMode === 'bluetooth'}
+              onClick={() => setActiveTab('bluetooth')}
+            >
+              Bluetooth
+            </button>
+          </div>
+          {radioMode === 'wifi' ? (
+            <nav className="app-tabs" aria-label="Wi-Fi sections">
+              {WIFI_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  data-app-tab={tab.key}
+                  className={activeTab === tab.key ? 'app-tab app-tab-active' : 'app-tab'}
+                  onClick={() => setActiveTab(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          ) : (
+            <span className="radio-mode-context">Scanner · retained sessions · analytics</span>
+          )}
         </div>
-        <div className="header-actions">
-          <button
-            type="button"
-            className="primary-button"
-            onClick={() => loadBaseline({ refreshScan: true, persistInventory: true })}
-            disabled={loading}
-          >
-            {loading ? 'Refreshing' : 'Refresh'}
-          </button>
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={createDiagnosticsBundle}
-            disabled={diagnosticsState.creating}
-          >
-            {diagnosticsState.creating ? 'Bundling' : 'Diagnostics'}
-          </button>
-        </div>
+        {radioMode === 'wifi' ? (
+          <div className="header-actions">
+            <button
+              type="button"
+              className="primary-button"
+              onClick={() => loadBaseline({ refreshScan: true, persistInventory: true })}
+              disabled={loading}
+            >
+              {loading ? 'Refreshing' : 'Refresh'}
+            </button>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={createDiagnosticsBundle}
+              disabled={diagnosticsState.creating}
+            >
+              {diagnosticsState.creating ? 'Bundling' : 'Diagnostics'}
+            </button>
+          </div>
+        ) : null}
       </section>
 
       {error ? <p className="error banner">{error}</p> : null}

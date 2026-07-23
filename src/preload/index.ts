@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('monitor', {
     ipcRenderer.invoke('radiochron:chronicle-recent', options),
   scanBluetooth: (options?: { durationMs?: number; zone?: string | null }) =>
     ipcRenderer.invoke('radiochron:ble-scan', options),
+  getBluetoothHistory: () => ipcRenderer.invoke('radiochron:ble-history'),
   resetBluetoothTracker: () => ipcRenderer.invoke('radiochron:ble-reset'),
   scanLocalNetwork: (options: { mode: 'passive' | 'poll' | 'active'; snapshot?: unknown | null }) =>
     ipcRenderer.invoke('local-network:scan', options),

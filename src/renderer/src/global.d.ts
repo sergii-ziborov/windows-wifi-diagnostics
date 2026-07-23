@@ -33,7 +33,7 @@ import type {
   RadioChronChronicleRecent,
   RadioChronChronicleStatus
 } from 'radiochron';
-import type { DesktopBleScanResult } from '../../platform/radiochronBle';
+import type { DesktopBleHistoryArchive, DesktopBleViewResult } from '../../platform/bleHistory';
 
 interface MonitorBridgeCapabilities {
   schema: 'monitor.bridge_capabilities.v1';
@@ -73,7 +73,8 @@ declare global {
       getRadioChronAnalysis?: (options?: { refreshScan?: boolean }) => Promise<RadioChronAnalysisResult>;
       getRadioChronChronicleStatus?: () => Promise<RadioChronChronicleStatus>;
       getRadioChronChronicleRecent?: (options?: { maxEntries?: number }) => Promise<RadioChronChronicleRecent>;
-      scanBluetooth?: (options?: { durationMs?: number; zone?: string | null }) => Promise<DesktopBleScanResult>;
+      scanBluetooth?: (options?: { durationMs?: number; zone?: string | null }) => Promise<DesktopBleViewResult>;
+      getBluetoothHistory?: () => Promise<DesktopBleHistoryArchive>;
       resetBluetoothTracker?: () => Promise<{ reset: true }>;
       scanLocalNetwork?: (options: {
         mode: LocalNetworkScanMode;

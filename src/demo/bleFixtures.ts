@@ -1,6 +1,10 @@
-import type { DesktopBleScanResult } from '../platform/radiochronBle';
+import type {
+  DesktopBleHistoryArchive,
+  DesktopBleHistoryPoint,
+  DesktopBleViewResult
+} from '../platform/bleHistory';
 
-export function demoBleScanResult(): DesktopBleScanResult {
+export function demoBleScanResult(): DesktopBleViewResult {
   const scannedAtMs = Date.now();
   return {
     scanned_at_ms: scannedAtMs,
@@ -111,6 +115,70 @@ export function demoBleScanResult(): DesktopBleScanResult {
           'Private BLE addresses can rotate and split one physical device into multiple histories.'
         ]
       }
-    ]
+    ],
+    analytics_history: demoBleHistory(scannedAtMs)
+  };
+}
+
+export function demoBleHistory(scannedAtMs = Date.now()): DesktopBleHistoryArchive {
+  const sessions = Array.from({ length: 12 }, (_, index) => {
+    const observedAtMs = scannedAtMs - (11 - index) * 5 * 60 * 1_000;
+    const points: DesktopBleHistoryPoint[] = [
+      demoPoint('protocol:demo-environment-beacon', 'Mock Env Beacon', 'caller_provided', 'caller', -48 + (index % 4) - 2)
+    ];
+    if ([3, 4, 6, 7, 8, 10, 11].includes(index)) {
+      points.push(demoPoint('ephemeral:demo-private-tag', 'Mock Tag', 'ephemeral_address', null, -70 + (index % 5)));
+    }
+    if (index % 2 === 0 || index >= 9) {
+      points.push(demoPoint('protocol:demo-asset-beacon', 'Mock Asset Beacon', 'caller_provided', 'caller', -78 + (index % 6)));
+    }
+    const persistentFinding = index >= 8 && points.some((point) => point.identity_key === 'ephemeral:demo-private-tag');
+    return {
+      scan_id: `mock-scan-${String(index + 1).padStart(2, '0')}`,
+      observed_at_ms: observedAtMs,
+      zone: index < 7 ? 'Mock Lab' : 'Mock Desk',
+      elapsed_ms: 1_500,
+      adapter_count: 1,
+      advertisement_count: points.length,
+      error_count: 0,
+      points,
+      findings: persistentFinding
+        ? [{
+            kind: 'persistent_unknown' as const,
+            severity: 'warning' as const,
+            identity_key: 'ephemeral:demo-private-tag',
+            summary: 'Mock unknown identity recurred across sampled scans.'
+          }]
+        : []
+    };
+  });
+
+  return {
+    schema_version: 1,
+    generated_at_ms: scannedAtMs,
+    storage_warning: null,
+    retention: {
+      max_age_days: 30,
+      max_sessions: 512
+    },
+    sessions
+  };
+}
+
+function demoPoint(
+  identityKey: string,
+  localName: string,
+  identityConfidence: DesktopBleHistoryPoint['identity_confidence'],
+  protocol: string | null,
+  rssiDbm: number
+): DesktopBleHistoryPoint {
+  return {
+    identity_key: identityKey,
+    identity_confidence: identityConfidence,
+    protocol,
+    local_name: localName,
+    address_type: identityConfidence === 'ephemeral_address' ? 'resolvable_private' : 'random_static',
+    rssi_dbm: rssiDbm,
+    payload_hash: `mock-payload:${identityKey}`
   };
 }

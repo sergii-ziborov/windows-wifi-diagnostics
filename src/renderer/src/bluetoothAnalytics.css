@@ -1,0 +1,250 @@
+.radio-mode-switch,
+.bluetooth-view-switch,
+.ble-window-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid rgba(252, 238, 10, 0.26);
+  background: rgba(0, 0, 0, 0.46);
+}
+
+.radio-mode-switch button,
+.bluetooth-view-switch button,
+.ble-window-switch button {
+  min-height: 30px;
+  border: 0;
+  background: transparent;
+  color: #928f7b;
+  cursor: pointer;
+  font: 700 0.7rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.08em;
+  padding: 0 12px;
+  text-transform: uppercase;
+}
+
+.radio-mode-switch button:hover,
+.bluetooth-view-switch button:hover,
+.ble-window-switch button:hover {
+  color: #f8f3d5;
+}
+
+.radio-mode-switch button.active,
+.bluetooth-view-switch button.active,
+.ble-window-switch button.active {
+  background: #fcee0a;
+  color: #0d0d08;
+}
+
+.radio-mode-switch button:focus-visible,
+.bluetooth-view-switch button:focus-visible,
+.ble-window-switch button:focus-visible {
+  outline: 2px solid #fcee0a;
+  outline-offset: 2px;
+}
+
+.radio-mode-context {
+  color: #8f8b6d;
+  font: 0.68rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.bluetooth-view-switch {
+  justify-self: start;
+}
+
+.bluetooth-view-switch button {
+  min-height: 36px;
+}
+
+.ble-analytics-layout {
+  display: grid;
+  gap: 16px;
+}
+
+.ble-analytics-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.ble-analytics-toolbar h2 {
+  margin: 4px 0 0;
+}
+
+.ble-window-switch {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.ble-finding-cell.danger strong {
+  color: #ff785f;
+}
+
+.ble-session-chart-wrap,
+.ble-matrix-wrap,
+.ble-analytics-table-wrap {
+  overflow-x: auto;
+}
+
+.ble-session-chart {
+  display: block;
+  min-width: 720px;
+  width: 100%;
+  height: 230px;
+}
+
+.ble-chart-grid {
+  stroke: rgba(234, 230, 203, 0.12);
+  stroke-width: 1;
+}
+
+.ble-chart-axis {
+  fill: #928f7b;
+  font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.ble-chart-bar {
+  fill: #8ecf5b;
+  opacity: 0.82;
+}
+
+.ble-chart-bar-warning {
+  fill: #e8ba4c;
+}
+
+.ble-chart-bar-high {
+  fill: #ff5d4d;
+}
+
+.ble-matrix,
+.ble-analytics-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ble-matrix {
+  min-width: 760px;
+}
+
+.ble-matrix th,
+.ble-matrix td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px 4px;
+  text-align: center;
+}
+
+.ble-matrix thead th {
+  color: #928f7b;
+  font: 0.63rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  writing-mode: vertical-rl;
+}
+
+.ble-matrix thead th:first-child {
+  min-width: 190px;
+  text-align: left;
+  writing-mode: initial;
+}
+
+.ble-matrix tbody th {
+  max-width: 220px;
+  overflow: hidden;
+  color: #eae6cb;
+  font: 0.72rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ble-matrix-cell {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #071005;
+  font: 700 0.62rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.ble-matrix-cell.strong {
+  background: #82dc5b;
+}
+
+.ble-matrix-cell.medium {
+  background: #d5bb48;
+}
+
+.ble-matrix-cell.weak {
+  background: #b36b4b;
+}
+
+.ble-matrix-cell.empty {
+  background: rgba(255, 255, 255, 0.025);
+  color: #615f53;
+}
+
+.ble-analytics-table {
+  min-width: 920px;
+}
+
+.ble-analytics-table th,
+.ble-analytics-table td {
+  padding: 11px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ble-analytics-table th {
+  color: #928f7b;
+  font: 0.67rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ble-analytics-table td strong,
+.ble-analytics-table td small {
+  display: block;
+}
+
+.ble-analytics-table td small {
+  margin-top: 4px;
+  color: #928f7b;
+  font-size: 0.7rem;
+}
+
+.ble-analytics-empty {
+  min-height: 180px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+@media (max-width: 1180px) {
+  .header-main {
+    flex-wrap: wrap;
+  }
+
+  .radio-mode-context {
+    display: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .ble-analytics-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ble-window-switch {
+    justify-content: flex-start;
+  }
+
+  .radio-mode-switch button,
+  .ble-window-switch button {
+    padding-inline: 8px;
+  }
+}

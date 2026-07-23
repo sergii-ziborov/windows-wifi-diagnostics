@@ -27,6 +27,8 @@ administered, and IP addresses come from documentation-only ranges.
 
 ![RadioChron Desktop Bluetooth history with synthetic beacons](docs/screenshots/radiochron-desktop-bluetooth.png)
 
+![RadioChron Desktop Bluetooth scan-session analytics with synthetic beacons](docs/screenshots/radiochron-desktop-bluetooth-analytics.png)
+
 ![RadioChron Desktop channel pressure view with synthetic access points](docs/screenshots/radiochron-desktop-channels.png)
 
 ## What is implemented
@@ -42,6 +44,9 @@ administered, and IP addresses come from documentation-only ranges.
   local identity history, persistence/disappearance, possible-clone and beacon
   flood evidence. Findings always include limitations; RSSI is not presented
   as physical distance.
+- A top-level Wi-Fi/Bluetooth mode switch plus retained BLE scan analytics:
+  real-timestamp activity bars, session-by-identity recurrence, scan coverage,
+  and RSSI distribution without smoothing or inferred observations.
 - Saved baseline runs, comparisons, reconnect/environment observations,
   evidence timelines, and diagnostic bundles.
 - AP/device inventory, a relative RF map, channel-pressure view, passive
@@ -154,6 +159,9 @@ writes SHA-256 manifests, and creates a draft GitHub release for final review.
 
 - No telemetry, cookies, or analytics.
 - Runtime state stays in the Electron user-data directory unless exported.
+- BLE analytics retain privacy-minimized scan sessions for at most 30 days or
+  512 scans. Raw Bluetooth addresses are not written to that archive, and
+  `Reset local history` clears it together with the Rust tracker.
 - SSIDs, BSSIDs, MAC addresses, IP configuration, and diagnostic bundles are
   sensitive network/location evidence; inspect them before sharing.
 - Saved Wi-Fi secrets are Windows-only, revealed only after an explicit action,
