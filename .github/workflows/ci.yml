@@ -50,7 +50,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - uses: dtolnay/rust-toolchain@1.80.0
+      - uses: dtolnay/rust-toolchain@1.85.0
       - run: npm ci
       - run: npm run dist:${{ matrix.target }} -- --${{ matrix.arch }}
       - uses: actions/upload-artifact@v6
