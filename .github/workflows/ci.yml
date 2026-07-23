@@ -56,5 +56,8 @@ jobs:
       - uses: actions/upload-artifact@v6
         with:
           name: radiochron-desktop-${{ matrix.target }}-${{ matrix.arch }}
-          path: release/*
+          path: |
+            release/*.exe
+            release/*.dmg
+            release/*.zip
           if-no-files-found: error
