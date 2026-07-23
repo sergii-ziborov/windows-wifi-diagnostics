@@ -86,6 +86,7 @@ export function BluetoothPanel({ demoMode, activeView }: BluetoothPanelProps) {
         scanning={scanning}
         adapterCount={result?.scan.adapter_count ?? 0}
         systemDeviceCount={result?.scan.system_devices?.length ?? 0}
+        discoveryMode={result?.scan.discovery_mode ?? null}
         elapsedMs={result?.scan.elapsed_ms ?? null}
         lastScanMs={result?.scanned_at_ms ?? history?.sessions.at(-1)?.observed_at_ms ?? null}
         onZoneChange={setZone}
@@ -111,6 +112,7 @@ export function BluetoothPanel({ demoMode, activeView }: BluetoothPanelProps) {
           devices={devices}
           zone={zone}
           adapterCount={result?.scan.adapter_count ?? 0}
+          discoveryMode={result?.scan.discovery_mode ?? null}
           lastScanMs={result?.scanned_at_ms ?? history?.sessions.at(-1)?.observed_at_ms ?? null}
           onSelect={setSelectedDevice}
         />

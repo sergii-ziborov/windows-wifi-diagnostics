@@ -55,6 +55,7 @@ describe('RadioChron BLE desktop adapter', () => {
 
   it('keeps screenshot data synthetic and visibly marked', () => {
     const demo = demoBleScanResult();
+    expect(demo.scan.discovery_mode).toBe('active');
     expect(demo.scan.advertisements).toHaveLength(7);
     expect(demo.scan.advertisements.every((item) => item.local_name?.startsWith('Mock'))).toBe(true);
     expect(demo.scan.advertisements.every((item) => item.address.startsWith('02:00:00:'))).toBe(true);

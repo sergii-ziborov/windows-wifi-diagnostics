@@ -6,19 +6,18 @@ import {
   type BleMapHistoryFilter
 } from './bleMapFilters';
 import { layoutBleMap, type BleMapSpread } from './bleMapLayout';
+import { buildBleMapRelations } from './bleMapRelations';
 import {
   BleMapRadioNode,
   BleMapSideRow,
   BleMapSystemNode
 } from './BluetoothMapElements';
 import { BluetoothSensorModal } from './BluetoothSensorModal';
-import {
-  RadioMapConnectionLayer,
-  type RadioMapConnectionLink
-} from './RadioMapConnections';
+import { RadioMapConnectionLayer } from './RadioMapConnections';
 import { RadioMapViewportToolbar, useRadioMapViewport } from './RadioMapViewport';
 import { radioMapRingStyle, radioMetricPointToViewport } from './radioMapGeometry';
 import type { BleWorkspaceDevice } from './bleWorkspaceModel';
+import type { DesktopBleDiscoveryMode } from '../../platform/radiochronBle';
 
 const LOCAL_NODE_KEY = 'ble:local';
 const SPREADS: Array<{ value: BleMapSpread; label: string }> = [
@@ -35,6 +34,7 @@ interface BluetoothMapProps {
   devices: BleWorkspaceDevice[];
   zone: string;
   adapterCount: number;
+  discoveryMode: DesktopBleDiscoveryMode | null;
   lastScanMs: number | null;
   onSelect: (device: BleWorkspaceDevice) => void;
 }
@@ -43,6 +43,7 @@ export function BluetoothMap({
   devices,
   zone,
   adapterCount,
+  discoveryMode,
   lastScanMs,
   onSelect
 }: BluetoothMapProps) {
@@ -86,10 +87,7 @@ export function BluetoothMap({
     ...radioNodes.map((node) => [node.device.key, node.position] as const),
     ...systemNodes.map((node) => [node.device.key, node.position] as const)
   ]);
-  const links = visibleDevices.flatMap((device) => {
-    const end = nodePositions.get(device.key);
-    return end ? [buildRelation(device, end)] : [];
-  });
+  const links = buildBleMapRelations(visibleDevices, nodePositions);
   const selectedLink = links.find((link) => link.id === selectedLinkId) ?? null;
   const highlightedKeys = new Set(highlightedKey ? [highlightedKey] : []);
 
@@ -193,14 +191,17 @@ export function BluetoothMap({
         </aside>
       </div>
       <p className="bluetooth-privacy-note">
-        Solid links are OS-reported connections; dashed links are paired inventory; dotted links are observations.
-        Radius is signal strength, not physical distance. Drag, zoom and fullscreen use the same engine as Wi-Fi.
+        Lines represent only OS-reported local connections (solid) or paired relationships (dashed).
+        Passive advertisements, retained history and unpaired inventory remain unlinked nodes.
+        Third-party device-to-device connections are not exposed by a standard scan. Radius is signal strength,
+        not physical distance. Drag, zoom and fullscreen use the same engine as Wi-Fi.
       </p>
       </article>
       {sensorOpen ? (
         <BluetoothSensorModal
           zone={zone}
           adapterCount={adapterCount}
+          discoveryMode={discoveryMode}
           lastScanMs={lastScanMs}
           devices={devices}
           onClose={() => setSensorOpen(false)}
@@ -230,22 +231,4 @@ function MapSideGroup({
 
 function systemNodePosition(index: number): { x: number; y: number } {
   return { x: 14 + (index % 4) * 24, y: 86 + Math.floor(index / 4) * 8 };
-}
-
-function buildRelation(device: BleWorkspaceDevice, end: { x: number; y: number }): RadioMapConnectionLink {
-  const kind = device.connected ? 'connected' : device.paired ? 'paired' : device.retainedOnly ? 'memory' : device.radioObserved ? 'observed' : 'system';
-  const label = device.connected ? 'Connected now' : device.paired ? 'Paired / known' : device.radioObserved ? 'Advertisement observed' : device.retainedOnly ? 'Retained history' : 'OS inventory';
-  return {
-    id: `ble-link:${device.key}`,
-    sourceKey: null,
-    targetKey: device.key,
-    kind,
-    start: { x: 50, y: 50 },
-    end,
-    sourceRadiusPx: 26,
-    targetRadiusPx: device.rssiDbm === null ? 34 : 27,
-    signal: device.rssiDbm === null ? null : Math.max(0, Math.min(100, (device.rssiDbm + 100) * 2)),
-    label,
-    detail: `${analyzeBleDevice(device).displayName} · ${device.rssiDbm === null ? 'no RSSI' : `${device.rssiDbm} dBm`}`
-  };
 }

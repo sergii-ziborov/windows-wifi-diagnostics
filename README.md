@@ -10,7 +10,7 @@ the [`radiochron`](https://github.com/sergii-ziborov/radiochron) Rust IoT core
 through its packaged native Node adapter.
 
 > Open-source beta. Download the unsigned test installers from
-> [`desktop-v0.2.0-beta.2`](https://github.com/sergii-ziborov/radiochron-electron/releases/tag/desktop-v0.2.0-beta.2).
+> [`desktop-v0.2.0-beta.3`](https://github.com/sergii-ziborov/radiochron-electron/releases/tag/desktop-v0.2.0-beta.3).
 > Windows SmartScreen and macOS Gatekeeper may warn because this beta is not
 > code-signed or notarized yet.
 
@@ -72,13 +72,18 @@ administered, and IP addresses come from documentation-only ranges.
   zoom, pointer pan, fullscreen, circular metric-space rings, ResizeObserver
   sizing, spread profiles, deterministic collision separation, search, and
   retained-history filters through 30 days. The clickable `You` node exposes
-  typed connected, paired, observed, retained, and OS-inventory relationships.
-  System-only devices without RSSI stay in an explicit OS-inventory lane and
-  never receive a fake RF position.
+  OS-reported connected and paired relationships. Passive advertisements,
+  retained evidence, and unpaired OS inventory remain unlinked nodes because
+  they do not prove a connection. Third-party device-to-device links are not
+  exposed by standard BLE discovery. System-only devices without RSSI stay in
+  an explicit OS-inventory lane and never receive a fake RF position.
 - Retained BLE Analytics combines selectable exact-scan timelines, identity
   and detector pulse watches, an RSSI/recurrence matrix, system connected-device
   counts, scan coverage, and filterable 1/7/30-day sampled-presence patterns
   including new, stable, weekday, recurring, intermittent and dormant evidence.
+- Bluetooth discovery is always bounded by the selected 2/4/8-second scan
+  window. Windows uses active discovery during that window to request names and
+  service metadata; macOS and Linux use their OS-managed discovery behavior.
 - Wi-Fi Analytics combines exact-snapshot timelines, an appeared/not-observed
   pulse watch, band/AP signal matrices, current security/vendor/channel
   breakdowns, and the same 1/7/30-day presence-pattern model.
@@ -186,9 +191,9 @@ npm run dist:mac -- --x64
 Outputs are written to `release/`. The native Node adapter and its provenance
 file are embedded in the packaged resources. GitHub Actions builds Windows x64,
 Intel Mac, and Apple Silicon installer artifacts. The current unsigned beta is
-available for [Windows x64](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.2/RadioChron-Desktop-0.2.0-Windows-x64.exe),
-[Apple Silicon](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.2/RadioChron-Desktop-0.2.0-macOS-Apple-Silicon.dmg),
-and [Intel Mac](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.2/RadioChron-Desktop-0.2.0-macOS-Intel.dmg).
+available for [Windows x64](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.3/RadioChron-Desktop-0.2.0-Windows-x64.exe),
+[Apple Silicon](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.3/RadioChron-Desktop-0.2.0-macOS-Apple-Silicon.dmg),
+and [Intel Mac](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.3/RadioChron-Desktop-0.2.0-macOS-Intel.dmg).
 
 These beta installers are for testing. Windows code signing and macOS Developer
 ID signing/notarization are still required for a production release.

@@ -26,9 +26,12 @@ export interface DesktopBluetoothSystemDevice {
   source: string;
 }
 
-export interface DesktopBleRadioScanResult extends RadioChronBleScanResult {
+export type DesktopBleRadioScanResult = RadioChronBleScanResult & {
+  discovery_mode?: DesktopBleDiscoveryMode;
   system_devices?: DesktopBluetoothSystemDevice[];
-}
+};
+
+export type DesktopBleDiscoveryMode = 'active' | 'passive' | 'platform_managed';
 
 export interface DesktopBleScanResult {
   scanned_at_ms: number;

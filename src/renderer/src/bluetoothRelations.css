@@ -143,21 +143,6 @@
   stroke-dasharray: 8 5;
 }
 
-.map-connection-observed {
-  color: #39d5dd;
-}
-
-.map-connection-observed .map-connection-edge,
-.map-connection-observed .map-connection-core,
-.map-connection-system .map-connection-edge,
-.map-connection-system .map-connection-core {
-  stroke-dasharray: 2 5;
-}
-
-.map-connection-system {
-  color: #8f8b6d;
-}
-
 .ble-relation-detail {
   position: absolute;
   left: 12px;

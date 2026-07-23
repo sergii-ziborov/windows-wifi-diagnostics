@@ -1,9 +1,12 @@
+import type { DesktopBleDiscoveryMode } from '../../platform/radiochronBle';
+
 interface BluetoothControlsProps {
   zone: string;
   durationMs: number;
   scanning: boolean;
   adapterCount: number;
   systemDeviceCount: number;
+  discoveryMode: DesktopBleDiscoveryMode | null;
   elapsedMs: number | null;
   lastScanMs: number | null;
   onZoneChange: (value: string) => void;
@@ -18,6 +21,7 @@ export function BluetoothControls({
   scanning,
   adapterCount,
   systemDeviceCount,
+  discoveryMode,
   elapsedMs,
   lastScanMs,
   onZoneChange,
@@ -37,7 +41,7 @@ export function BluetoothControls({
           </strong>
           <small>
             {lastScanMs
-              ? `Last evidence ${formatTime(lastScanMs)}${elapsedMs ? ` · ${elapsedMs} ms` : ''}`
+              ? `Last evidence ${formatTime(lastScanMs)}${elapsedMs ? ` · ${elapsedMs} ms` : ''}${discoveryMode ? ` · ${discoveryLabel(discoveryMode)}` : ''}`
               : 'No radio or system inventory collected in this session'}
           </small>
         </div>
@@ -64,6 +68,12 @@ export function BluetoothControls({
       </div>
     </section>
   );
+}
+
+function discoveryLabel(mode: DesktopBleDiscoveryMode): string {
+  if (mode === 'active') return 'active discovery';
+  if (mode === 'passive') return 'passive discovery';
+  return 'OS-managed discovery';
 }
 
 function formatTime(value: number): string {
