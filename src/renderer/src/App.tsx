@@ -3372,8 +3372,8 @@ function buildLeakReportHtml(input: {
   </style>
 </head>
 <body>
-  <h1>Monitor Leak Report</h1>
-  <p class="muted">Generated ${escapeHtml(formatDateTime(new Date().toISOString()))}. Defensive report only; Monitor did not change adapters, disconnect clients, or send exploitation traffic.</p>
+  <h1>RadioChron Network Evidence Report</h1>
+  <p class="muted">Generated ${escapeHtml(formatDateTime(new Date().toISOString()))}. Defensive report only; RadioChron did not change adapters, disconnect clients, or send exploitation traffic.</p>
   <div class="meta">
     <div class="box"><span class="muted">Scope</span><strong>${escapeHtml(input.scopeTitle)}</strong></div>
     <div class="box"><span class="muted">APs</span><strong>${input.items.length}</strong></div>
@@ -3415,7 +3415,7 @@ function leakReportFilename(
     : location?.label ?? location?.location_key ?? 'scan-location';
   const safeLabel = label.replace(/[^a-z0-9_.-]+/gi, '-').replace(/^-+|-+$/g, '') || scope;
   const stamp = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
-  return `monitor-leak-${scope}-${safeLabel}-${stamp}.pdf`;
+  return `radiochron-evidence-${scope}-${safeLabel}-${stamp}.pdf`;
 }
 
 function escapeHtml(value: string | number | null | undefined): string {

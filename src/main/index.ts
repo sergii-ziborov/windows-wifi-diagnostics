@@ -478,9 +478,9 @@ ipcMain.handle(
 
 async function exportReportPdf(options: { html: string; filename: string | null }): Promise<{ saved: boolean; path: string | null; error: string | null }> {
   const sourceWindow = mainWindow ?? BrowserWindow.getFocusedWindow() ?? undefined;
-  const defaultFilename = sanitizePdfFilename(options.filename ?? 'monitor-vulnerability-report.pdf');
+  const defaultFilename = sanitizePdfFilename(options.filename ?? 'radiochron-report.pdf');
   const saveDialogOptions = {
-    title: 'Save vulnerability report PDF',
+    title: 'Save RadioChron report PDF',
     defaultPath: defaultFilename,
     filters: [{ name: 'PDF', extensions: ['pdf'] }]
   };
