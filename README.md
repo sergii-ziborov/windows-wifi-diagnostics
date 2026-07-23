@@ -10,7 +10,7 @@ the [`radiochron`](https://github.com/sergii-ziborov/radiochron) Rust IoT core
 through its packaged native Node adapter.
 
 > Open-source beta. Download the unsigned test installers from
-> [`desktop-v0.2.0-beta.1`](https://github.com/sergii-ziborov/radiochron-electron/releases/tag/desktop-v0.2.0-beta.1).
+> [`desktop-v0.2.0-beta.2`](https://github.com/sergii-ziborov/radiochron-electron/releases/tag/desktop-v0.2.0-beta.2).
 > Windows SmartScreen and macOS Gatekeeper may warn because this beta is not
 > code-signed or notarized yet.
 
@@ -186,9 +186,9 @@ npm run dist:mac -- --x64
 Outputs are written to `release/`. The native Node adapter and its provenance
 file are embedded in the packaged resources. GitHub Actions builds Windows x64,
 Intel Mac, and Apple Silicon installer artifacts. The current unsigned beta is
-available for [Windows x64](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.1/RadioChron-Desktop-0.2.0-Windows-x64.exe),
-[Apple Silicon](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.1/RadioChron-Desktop-0.2.0-macOS-Apple-Silicon.dmg),
-and [Intel Mac](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.1/RadioChron-Desktop-0.2.0-macOS-Intel.dmg).
+available for [Windows x64](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.2/RadioChron-Desktop-0.2.0-Windows-x64.exe),
+[Apple Silicon](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.2/RadioChron-Desktop-0.2.0-macOS-Apple-Silicon.dmg),
+and [Intel Mac](https://github.com/sergii-ziborov/radiochron-electron/releases/download/desktop-v0.2.0-beta.2/RadioChron-Desktop-0.2.0-macOS-Intel.dmg).
 
 These beta installers are for testing. Windows code signing and macOS Developer
 ID signing/notarization are still required for a production release.
