@@ -1,0 +1,156 @@
+.radio-presence-panel {
+  min-width: 0;
+}
+
+.radio-presence-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: end;
+}
+
+.radio-presence-heading h2 {
+  margin: 3px 0 0;
+}
+
+.radio-presence-heading > div > span {
+  display: block;
+  margin-top: 5px;
+  color: #8f8b6d;
+  font-size: 0.72rem;
+}
+
+.radio-presence-heading label {
+  min-width: min(300px, 40vw);
+}
+
+.radio-presence-heading label span {
+  display: block;
+  margin-bottom: 4px;
+  color: #8f8b6d;
+  font: 700 0.6rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.radio-presence-heading input {
+  width: 100%;
+}
+
+.radio-presence-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 14px 0 8px;
+}
+
+.radio-presence-filters button {
+  min-height: 29px;
+  padding: 0 9px;
+  border: 1px solid rgba(252, 238, 10, 0.25);
+  background: #11140e;
+  color: #aaa782;
+  font: 800 0.61rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.radio-presence-filters button.active {
+  border-color: #fcee0a;
+  background: #fcee0a;
+  color: #080a07;
+}
+
+.radio-presence-filters b {
+  margin-left: 4px;
+}
+
+.radio-presence-table-wrap {
+  overflow: auto;
+  border-top: 1px solid rgba(252, 238, 10, 0.22);
+}
+
+.radio-presence-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+}
+
+.radio-presence-table th,
+.radio-presence-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid rgba(252, 238, 10, 0.13);
+  text-align: left;
+  vertical-align: top;
+}
+
+.radio-presence-table th {
+  color: #8f8b6d;
+  font: 800 0.58rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.radio-presence-table td {
+  font-size: 0.7rem;
+}
+
+.radio-presence-table strong,
+.radio-presence-table small {
+  display: block;
+}
+
+.radio-presence-table small {
+  margin-top: 3px;
+  color: #8f8b6d;
+  font-size: 0.61rem;
+}
+
+.radio-pattern-badge {
+  display: inline-block;
+  padding: 3px 6px;
+  border: 1px solid currentColor;
+  font: 800 0.56rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.radio-pattern-new,
+.radio-window-stable {
+  color: #7ddb5a;
+}
+
+.radio-pattern-stable {
+  color: #69d5ff;
+}
+
+.radio-pattern-weekday,
+.radio-pattern-recurring {
+  color: #fcee0a;
+}
+
+.radio-pattern-intermittent,
+.radio-window-intermittent {
+  color: #ffb34f;
+}
+
+.radio-pattern-dormant,
+.radio-window-not-seen {
+  color: #ff704f;
+}
+
+.radio-window-insufficient {
+  color: #8f8b6d;
+}
+
+.radio-presence-empty {
+  padding: 14px 4px;
+}
+
+@media (max-width: 760px) {
+  .radio-presence-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .radio-presence-heading label {
+    min-width: 0;
+  }
+}

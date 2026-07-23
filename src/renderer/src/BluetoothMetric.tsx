@@ -1,10 +1,12 @@
+import type { ReactNode } from 'react';
+
 export function BluetoothMetric({
   label,
   value,
   tone = 'neutral'
 }: {
   label: string;
-  value: number;
+  value: ReactNode;
   tone?: 'neutral' | 'danger';
 }) {
   return (

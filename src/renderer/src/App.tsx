@@ -6,12 +6,21 @@ import {
   useState,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
-  type PointerEvent as ReactPointerEvent,
-  type ReactNode,
-  type WheelEvent
+  type ReactNode
 } from 'react';
 import { createPortal } from 'react-dom';
 import { BluetoothPanel } from './BluetoothPanel';
+import { BLUETOOTH_TABS, type BluetoothView } from './bluetoothWorkspace';
+import { useBodyScrollLock } from './bodyScrollLock';
+import {
+  RadioMapViewportToolbar,
+  useRadioMapViewport,
+  type MapPan,
+  type MapViewportSize
+} from './RadioMapViewport';
+import { RadioMapConnectionLayer } from './RadioMapConnections';
+import { radioMapRingStyle, radioMetricPointToViewport } from './radioMapGeometry';
+import { WifiReportsAnalytics } from './WifiReportsAnalytics';
 import accessPointVisualUrl from './assets/device-visuals/access-point.svg';
 import hiddenNetworkVisualUrl from './assets/device-visuals/hidden-network.svg';
 import hotspotVisualUrl from './assets/device-visuals/hotspot.svg';
@@ -224,11 +233,6 @@ interface NetworkDeviceVisual {
   alt: string;
 }
 
-interface MapPan {
-  x: number;
-  y: number;
-}
-
 interface MapPositionedItem {
   kind: 'item';
   id: string;
@@ -264,11 +268,6 @@ interface MapConnectionLink {
   detail: string;
 }
 
-interface MapViewportSize {
-  width: number;
-  height: number;
-}
-
 interface MapHoverTooltip {
   id: string;
   x: number;
@@ -284,7 +283,7 @@ interface MapLayoutContext {
   connectedNetwork: WindowsWifiNetwork | null;
 }
 
-type MapHistoryFilter = 'current' | '5m' | '15m' | '30m' | '1h' | '2h' | '6h' | '12h' | '24h' | 'today' | 'all' | 'old';
+type MapHistoryFilter = 'current' | '5m' | '15m' | '30m' | '1h' | '2h' | '6h' | '12h' | '24h' | '7d' | '30d' | 'today' | 'all' | 'old';
 type MapSecurityVisualTone = 'wpa3' | 'enterprise' | 'wpa2' | 'legacy' | 'open' | 'unknown' | 'suspect';
 
 interface ProfileSecretState {
@@ -558,7 +557,7 @@ const WIFI_TABS: Array<{ key: WifiTab; label: string }> = [
   { key: 'overview', label: 'Overview' },
   { key: 'map', label: 'Map' },
   { key: 'network', label: 'Network' },
-  { key: 'reports', label: 'Reports' },
+  { key: 'reports', label: 'Analytics' },
   { key: 'channels', label: 'Channels' }
 ];
 const DEVICE_VISUALS = {
@@ -746,6 +745,8 @@ const MAP_HISTORY_FILTERS: Array<{ value: MapHistoryFilter; label: string }> = [
   { value: '6h', label: '6h' },
   { value: '12h', label: '12h' },
   { value: '24h', label: '24h' },
+  { value: '7d', label: '7d' },
+  { value: '30d', label: '30d' },
   { value: 'today', label: 'Today' },
   { value: 'all', label: 'All history' },
   { value: 'old', label: 'Old' }
@@ -856,64 +857,6 @@ const SCAN_VISIBILITY_PROFILES: ScanVisibilityProfile[] = [
   }
 ];
 
-let bodyScrollLockCount = 0;
-let bodyScrollPreviousHtmlOverflow = '';
-let bodyScrollPreviousHtmlOverscrollBehavior = '';
-let bodyScrollPreviousOverflow = '';
-let bodyScrollPreviousOverscrollBehavior = '';
-let bodyScrollPreviousPosition = '';
-let bodyScrollPreviousTop = '';
-let bodyScrollPreviousWidth = '';
-let bodyScrollPreviousPaddingRight = '';
-let bodyScrollPreviousScrollY = 0;
-
-function useBodyScrollLock(active: boolean): void {
-  useEffect(() => {
-    if (!active || typeof document === 'undefined' || typeof window === 'undefined') {
-      return undefined;
-    }
-
-    bodyScrollLockCount += 1;
-    if (bodyScrollLockCount === 1) {
-      const scrollbarGap = Math.max(0, window.innerWidth - document.documentElement.clientWidth);
-      bodyScrollPreviousScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-      bodyScrollPreviousHtmlOverflow = document.documentElement.style.overflow;
-      bodyScrollPreviousHtmlOverscrollBehavior = document.documentElement.style.overscrollBehavior;
-      bodyScrollPreviousOverflow = document.body.style.overflow;
-      bodyScrollPreviousOverscrollBehavior = document.body.style.overscrollBehavior;
-      bodyScrollPreviousPosition = document.body.style.position;
-      bodyScrollPreviousTop = document.body.style.top;
-      bodyScrollPreviousWidth = document.body.style.width;
-      bodyScrollPreviousPaddingRight = document.body.style.paddingRight;
-      document.documentElement.style.overflow = 'hidden';
-      document.documentElement.style.overscrollBehavior = 'none';
-      document.body.style.overflow = 'hidden';
-      document.body.style.overscrollBehavior = 'none';
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${bodyScrollPreviousScrollY}px`;
-      document.body.style.width = '100%';
-      if (scrollbarGap > 0) {
-        document.body.style.paddingRight = `${scrollbarGap}px`;
-      }
-    }
-
-    return () => {
-      bodyScrollLockCount = Math.max(0, bodyScrollLockCount - 1);
-      if (bodyScrollLockCount === 0) {
-        document.documentElement.style.overflow = bodyScrollPreviousHtmlOverflow;
-        document.documentElement.style.overscrollBehavior = bodyScrollPreviousHtmlOverscrollBehavior;
-        document.body.style.overflow = bodyScrollPreviousOverflow;
-        document.body.style.overscrollBehavior = bodyScrollPreviousOverscrollBehavior;
-        document.body.style.position = bodyScrollPreviousPosition;
-        document.body.style.top = bodyScrollPreviousTop;
-        document.body.style.width = bodyScrollPreviousWidth;
-        document.body.style.paddingRight = bodyScrollPreviousPaddingRight;
-        window.scrollTo(0, bodyScrollPreviousScrollY);
-      }
-    };
-  }, [active]);
-}
-
 const INITIAL_NETWORK_FRESHNESS: NetworkFreshnessState = {
   checkedAtUtc: null,
   acceptedAtUtc: null,
@@ -930,6 +873,7 @@ const INITIAL_NETWORK_FRESHNESS: NetworkFreshnessState = {
 export function App() {
   const [viewState, setViewState] = useState<BaselineViewState>(INITIAL_STATE);
   const [activeTab, setActiveTab] = useState<AppTab>('overview');
+  const [bluetoothView, setBluetoothView] = useState<BluetoothView>('overview');
   const lastWifiTabRef = useRef<WifiTab>('overview');
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
   const [analysisState, setAnalysisState] = useState<RunAnalysisViewState>(INITIAL_ANALYSIS_STATE);
@@ -952,6 +896,7 @@ export function App() {
   const [networkRefreshing, setNetworkRefreshing] = useState(false);
   const [rememberedNetworks, setRememberedNetworks] = useState<RememberedNetwork[]>([]);
   const [networkHistory, setNetworkHistory] = useState<NetworkHistorySnapshot[]>(loadPersistedNetworkHistory);
+  const demoHistorySeededRef = useRef(false);
   const [deviceHistory, setDeviceHistory] = useState<DeviceHistoryResult | null>(null);
   const [deviceHistoryWindowHours] = useState(24);
   // "New" window is evaluated in the renderer against each record's first_seen_utc so sub-hour
@@ -968,6 +913,32 @@ export function App() {
   const collectionPreset = COLLECTION_PRESETS[collectionPresetIndex] ?? COLLECTION_PRESETS[0];
   const demoMode = new URLSearchParams(window.location.search).get('demo') === '1';
   const radioMode = activeTab === 'bluetooth' ? 'bluetooth' : 'wifi';
+
+  useEffect(() => {
+    if (!demoMode || demoHistorySeededRef.current || rememberedNetworks.length === 0) return;
+    demoHistorySeededRef.current = true;
+    const latestMs = Date.now();
+    const syntheticHistory = Array.from({ length: 12 }, (_, index) => {
+      const snapshotMs = latestMs - (11 - index) * 5 * 60_000;
+      const items = rememberedNetworks
+        .filter((_, itemIndex) => itemIndex < 2 || (itemIndex + index) % 4 !== 0)
+        .map((item, itemIndex) => {
+          const live = itemIndex < 2 || (itemIndex + index) % 3 !== 0;
+          const signal = item.network.signal_percent;
+          return {
+            ...item,
+            lastSeenUtc: new Date(snapshotMs - (live ? 0 : 2 * 60_000)).toISOString(),
+            missedScans: live ? 0 : 1,
+            network: {
+              ...item.network,
+              signal_percent: signal === null ? null : Math.max(8, Math.min(100, signal + ((index + itemIndex) % 9) - 4))
+            }
+          };
+        });
+      return createNetworkHistorySnapshot(new Date(snapshotMs).toISOString(), items, snapshotMs);
+    });
+    setNetworkHistory(syntheticHistory);
+  }, [demoMode, rememberedNetworks]);
 
   useEffect(() => {
     clearLegacyMapLayoutStorage();
@@ -2110,7 +2081,19 @@ export function App() {
               ))}
             </nav>
           ) : (
-            <span className="radio-mode-context">Scanner · retained sessions · analytics</span>
+            <nav className="app-tabs" aria-label="Bluetooth sections">
+              {BLUETOOTH_TABS.map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  data-bluetooth-view={tab.key}
+                  className={bluetoothView === tab.key ? 'app-tab app-tab-active' : 'app-tab'}
+                  onClick={() => setBluetoothView(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
           )}
         </div>
         {radioMode === 'wifi' ? (
@@ -2270,7 +2253,7 @@ export function App() {
           value={latestRun ? formatRunStorage(latestRun) : 'none'}
           detail={latestRun ? `${formatRunLabel(latestRun)} | ${valueOrUnknown(latestRun.network_bssid_count)} APs` : 'no saved baseline yet'}
           onActivate={() => setActiveTab('reports')}
-          activateHint="Open Reports"
+          activateHint="Open Analytics"
         />
       </section>
 
@@ -2467,6 +2450,7 @@ export function App() {
 
       {activeTab === 'reports' ? (
       <section className="reports-grid">
+        <WifiReportsAnalytics history={networkHistory} nowMs={nowMs} />
         <LeakReportsPanel
           location={selectedScanLocation}
           locationItems={selectedLocationItems}
@@ -2481,7 +2465,7 @@ export function App() {
       </section>
       ) : null}
 
-      {activeTab === 'bluetooth' ? <BluetoothPanel demoMode={demoMode} /> : null}
+      {activeTab === 'bluetooth' ? <BluetoothPanel demoMode={demoMode} activeView={bluetoothView} /> : null}
 
       {activeTab === 'channels' ? (
       <section className="channels-grid">
@@ -3330,11 +3314,13 @@ function buildLeakReportHtml(input: {
 }): string {
   const apRows = input.items.map((item) => `
     <tr>
-      <td>${escapeHtml(formatNetworkSsidLabel(item.network))}</td>
-      <td>${escapeHtml(valueOrUnknown(item.network.bssid))}</td>
+      <td><strong>${escapeHtml(formatNetworkSsidLabel(item.network))}</strong><small>${escapeHtml(valueOrUnknown(item.network.bssid))}</small></td>
+      <td>${escapeHtml(valueOrUnknown(item.network.mac_enrichment?.vendor ?? null))}</td>
+      <td>${escapeHtml(formatPercent(item.network.signal_percent))}</td>
+      <td>${escapeHtml(`${valueOrUnknown(item.network.band)} · ch ${valueOrUnknown(item.network.channel)}`)}</td>
       <td>${escapeHtml(formatVulnerabilityBadge(item.network.vulnerability_intel))}</td>
-      <td>${escapeHtml(formatNetworkSecurityBadge(item.network))}</td>
-      <td>${escapeHtml(item.isStale ? 'stale' : 'live')}</td>
+      <td><strong>${escapeHtml(formatNetworkSecurityBadge(item.network))}</strong><small>${escapeHtml(item.network.security_assessment?.summary ?? 'No security assessment')}</small></td>
+      <td>${escapeHtml(item.isStale ? 'stale' : 'live')}<small>${escapeHtml(`${item.seenCount} snapshots · last ${formatDateTime(item.lastSeenUtc)}`)}</small></td>
     </tr>
   `).join('');
   const lanRows = input.connectedDevices.map((device) => `
@@ -3350,6 +3336,17 @@ function buildLeakReportHtml(input: {
   const checkList = input.localChecks.length
     ? `<ul>${input.localChecks.map((check) => `<li><strong>${escapeHtml(check.label)}</strong>: ${escapeHtml(check.summary)}</li>`).join('')}</ul>`
     : '<p>No local exposure checks saved.</p>';
+  const reviewList = input.vulnerableItems.length
+    ? `<ul>${input.vulnerableItems.map((item) => `
+        <li><strong>${escapeHtml(formatNetworkSsidLabel(item.network))}</strong> —
+          ${escapeHtml(item.network.vulnerability_intel?.summary ?? item.network.security_assessment?.summary ?? 'Review requested')}
+        </li>`).join('')}</ul>`
+    : '<p>No AP is currently marked review or priority in this scope.</p>';
+  const liveCount = input.items.filter((item) => !item.isStale).length;
+  const openCount = input.items.filter((item) => item.network.security_assessment?.posture === 'open').length;
+  const averageSignal = input.items.length
+    ? Math.round(input.items.reduce((sum, item) => sum + (item.network.signal_percent ?? 0), 0) / input.items.length)
+    : null;
 
   return `<!doctype html>
 <html>
@@ -3357,16 +3354,20 @@ function buildLeakReportHtml(input: {
   <meta charset="utf-8" />
   <title>${escapeHtml(input.scopeTitle)} leak report</title>
   <style>
-    body { margin: 0; padding: 28px; color: #17232b; font: 12px/1.45 Arial, sans-serif; }
+    @page { size: A4 landscape; margin: 11mm; }
+    body { margin: 0; color: #17232b; font: 10px/1.4 Arial, sans-serif; }
     h1, h2 { margin: 0 0 10px; }
     h1 { font-size: 22px; }
     h2 { margin-top: 20px; padding-top: 12px; border-top: 1px solid #d9e3e8; font-size: 16px; }
-    .meta { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0; }
+    .meta { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin: 14px 0; }
     .box { border: 1px solid #d5dee4; border-radius: 8px; padding: 10px; background: #fbfdfe; }
     .muted { color: #60717a; }
     table { width: 100%; border-collapse: collapse; margin-top: 8px; }
     th, td { padding: 6px; border-bottom: 1px solid #e5edf1; text-align: left; vertical-align: top; }
     th { color: #536872; font-size: 10px; text-transform: uppercase; }
+    td small, .box span, .box strong { display: block; }
+    td small { margin-top: 2px; color: #60717a; }
+    section { break-inside: avoid; }
     ul { margin: 6px 0 0 18px; padding: 0; }
   </style>
 </head>
@@ -3377,12 +3378,19 @@ function buildLeakReportHtml(input: {
     <div class="box"><span class="muted">Scope</span><strong>${escapeHtml(input.scopeTitle)}</strong></div>
     <div class="box"><span class="muted">APs</span><strong>${input.items.length}</strong></div>
     <div class="box"><span class="muted">APs needing review</span><strong>${input.vulnerableItems.length}</strong></div>
+    <div class="box"><span class="muted">Live / stale</span><strong>${liveCount} / ${input.items.length - liveCount}</strong></div>
+    <div class="box"><span class="muted">Open security</span><strong>${openCount}</strong></div>
+    <div class="box"><span class="muted">Average signal</span><strong>${averageSignal === null ? 'unknown' : `${averageSignal}%`}</strong></div>
     <div class="box"><span class="muted">LAN devices</span><strong>${input.connectedDevices.length}</strong></div>
   </div>
-  <p>Connected SSID: ${escapeHtml(valueOrUnknown(input.currentSnapshot?.ssid ?? null))}. Current BSSID: ${escapeHtml(valueOrUnknown(input.currentSnapshot?.bssid ?? null))}.</p>
+  <p>Connected SSID: <strong>${escapeHtml(valueOrUnknown(input.currentSnapshot?.ssid ?? null))}</strong>.
+    Current BSSID: <strong>${escapeHtml(valueOrUnknown(input.currentSnapshot?.bssid ?? null))}</strong>.
+    Signal: <strong>${escapeHtml(formatPercent(input.currentSnapshot?.signal_percent ?? null))}</strong>.
+    Band/channel: <strong>${escapeHtml(`${valueOrUnknown(input.currentSnapshot?.band ?? null)} · ch ${valueOrUnknown(input.currentSnapshot?.channel ?? null)}`)}</strong>.</p>
   ${input.location ? `<p>Location: ${escapeHtml(formatScanLocationLabel(input.location))} (${input.location.latitude.toFixed(5)}, ${input.location.longitude.toFixed(5)}).</p>` : ''}
+  <section><h2>Review evidence</h2>${reviewList}</section>
   <h2>Access Points</h2>
-  <table><thead><tr><th>SSID</th><th>BSSID</th><th>Exposure</th><th>Security</th><th>State</th></tr></thead><tbody>${apRows || '<tr><td colspan="5">No APs in scope.</td></tr>'}</tbody></table>
+  <table><thead><tr><th>SSID / BSSID</th><th>Vendor</th><th>Signal</th><th>RF</th><th>Exposure</th><th>Security evidence</th><th>History</th></tr></thead><tbody>${apRows || '<tr><td colspan="7">No APs in scope.</td></tr>'}</tbody></table>
   <h2>Connected LAN Devices</h2>
   <table><thead><tr><th>IP</th><th>Host</th><th>MAC</th><th>Role/state</th><th>Interface</th><th>Latency</th></tr></thead><tbody>${lanRows || '<tr><td colspan="6">No LAN scan result.</td></tr>'}</tbody></table>
   <h2>Local Exposure Checks</h2>
@@ -3910,15 +3918,6 @@ function LocationRfMap({
   ).length;
   const strongest = historyFilteredItems.find((item) => !item.isStale) ?? historyFilteredItems[0] ?? null;
   const isFiltered = activeFilter.kind !== 'all';
-  const [zoom, setZoom] = useState(1);
-  // layoutZoom only jumps when zoom has changed by >=50% since the last layout, so
-  // the expensive node layout / clustering re-solves at 50% boundaries (no per-tick
-  // jitter). Between boundaries the canvas scales smoothly via CSS (scale = zoom /
-  // layoutZoom), so zoom feels continuous but positions stay fixed.
-  const [layoutZoom, setLayoutZoom] = useState(1);
-  const [pan, setPan] = useState<MapPan>({ x: 0, y: 0 });
-  const [isPanning, setIsPanning] = useState(false);
-  const [fullscreen, setFullscreen] = useState(false);
   const [highlightedItemKey, setHighlightedItemKey] = useState<string | null>(null);
   const [highlightedClusterKey, setHighlightedClusterKey] = useState<string | null>(null);
   const [selectedItemKey, setSelectedItemKey] = useState<string | null>(null);
@@ -3926,24 +3925,23 @@ function LocationRfMap({
   const [selectedLinkId, setSelectedLinkId] = useState<string | null>(null);
   const [mapTooltip, setMapTooltip] = useState<MapHoverTooltip | null>(null);
   const [localDetailsOpen, setLocalDetailsOpen] = useState(false);
-  const [mapViewportSize, setMapViewportSize] = useState<MapViewportSize>({ width: 0, height: 0 });
-  const mapStageRef = useRef<HTMLDivElement | null>(null);
-  useBodyScrollLock(fullscreen);
-  const dragStateRef = useRef<{
-    pointerId: number;
-    startX: number;
-    startY: number;
-    originX: number;
-    originY: number;
-  } | null>(null);
-  const suppressNextMapClickRef = useRef(false);
-  // Re-solve the layout only when zoom has moved >=50% from the last layout zoom.
-  useEffect(() => {
-    setLayoutZoom((prev) => {
-      const ratio = zoom / prev;
-      return ratio >= 1.5 || ratio <= 1 / 1.5 ? zoom : prev;
-    });
-  }, [zoom]);
+  const mapViewport = useRadioMapViewport({
+    escapeBlocked: Boolean(selectedItemKey || selectedClusterKey || localDetailsOpen)
+  });
+  const {
+    zoom,
+    layoutZoom,
+    pan,
+    isPanning,
+    fullscreen,
+    canPanMap,
+    mapViewportSize,
+    mapStageRef,
+    mapStageStyle,
+    handleMapWheel,
+    handleMapPointerDown,
+    handleMapClickCapture
+  } = mapViewport;
   const mapDrawables = useMemo(
     () => clusterMapItems(mapDisplayItems, layoutZoom, currentSnapshot, mapRangeKm),
     [currentSnapshot, mapDisplayItems, mapRangeKm, layoutZoom]
@@ -3985,88 +3983,10 @@ function LocationRfMap({
     }
     return keys;
   }, [highlightedCluster, highlightedItemKey]);
-  const canPanMap = zoom > 0.42;
   const displayMapLinks = useMemo(
     () => mapLinks.map((link) => mapConnectionLinkToViewport(link, mapViewportSize)),
     [mapLinks, mapViewportSize]
   );
-
-  const mapStageStyle = useMemo(
-    () =>
-      ({
-        '--map-grid-size': `${Math.max(14, Math.round(48 * zoom))}px`,
-        '--map-grid-pan-x': `${Math.round(pan.x)}px`,
-        '--map-grid-pan-y': `${Math.round(pan.y)}px`
-      }) as CSSProperties,
-    [pan.x, pan.y, zoom]
-  );
-
-  // Smooth zoom toward the cursor. The canvas is CSS-scaled by zoom/layoutZoom, so
-  // this standard anchored-zoom pan keeps the point under the cursor fixed.
-  const applyZoomDelta = useCallback((delta: number, anchor?: { clientX: number; clientY: number }) => {
-    setZoom((current) => {
-      const next = clampMapZoom(current + delta);
-      if (next === current) {
-        return current;
-      }
-
-      const stageRect = mapStageRef.current?.getBoundingClientRect() ?? null;
-      setPan((currentPan) => adjustMapPanForZoom(currentPan, current, next, stageRect, anchor));
-      return next;
-    });
-  }, []);
-  const zoomIn = useCallback(() => {
-    applyZoomDelta(0.18);
-  }, [applyZoomDelta]);
-  const zoomOut = useCallback(() => {
-    applyZoomDelta(-0.18);
-  }, [applyZoomDelta]);
-  const resetZoom = useCallback(() => {
-    setZoom(1);
-    setPan({ x: 0, y: 0 });
-  }, []);
-  const handleMapWheel = useCallback(
-    (event: WheelEvent<HTMLDivElement>) => {
-      if (!event.ctrlKey) {
-        return;
-      }
-
-      event.preventDefault();
-      applyZoomDelta(event.deltaY < 0 ? 0.12 : -0.12, { clientX: event.clientX, clientY: event.clientY });
-    },
-    [applyZoomDelta]
-  );
-  const handleMapPointerDown = useCallback(
-    (event: ReactPointerEvent<HTMLDivElement>) => {
-      const target = event.target as HTMLElement;
-      if (
-        event.button !== 0 ||
-        !canPanMap ||
-        target.closest('.map-toolbar, .map-location-toolbar, .map-connection-layer, .map-center, .map-node, .map-cluster')
-      ) {
-        return;
-      }
-
-      dragStateRef.current = {
-        pointerId: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        originX: pan.x,
-        originY: pan.y
-      };
-      setIsPanning(true);
-    },
-    [canPanMap, pan.x, pan.y]
-  );
-  const handleMapClickCapture = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
-    if (!suppressNextMapClickRef.current) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-    suppressNextMapClickRef.current = false;
-  }, []);
   const closeModal = useCallback(() => setSelectedItemKey(null), []);
   const closeCluster = useCallback(() => setSelectedClusterKey(null), []);
   const clearMapSelection = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
@@ -4083,127 +4003,6 @@ function LocationRfMap({
   const clearMapTooltip = useCallback((tooltipId: string) => {
     setMapTooltip((current) => (current?.id === tooltipId ? null : current));
   }, []);
-
-  useEffect(() => {
-    if (!canPanMap) {
-      setPan({ x: 0, y: 0 });
-      setIsPanning(false);
-      dragStateRef.current = null;
-    }
-  }, [canPanMap]);
-
-  useEffect(() => {
-    const stage = mapStageRef.current;
-    if (!stage) {
-      return undefined;
-    }
-
-    const updateSize = () => {
-      const rect = stage.getBoundingClientRect();
-      const width = Math.round(rect.width);
-      const height = Math.round(rect.height);
-      setMapViewportSize((current) => (current.width === width && current.height === height ? current : { width, height }));
-    };
-
-    updateSize();
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateSize);
-      return () => window.removeEventListener('resize', updateSize);
-    }
-
-    const observer = new ResizeObserver(updateSize);
-    observer.observe(stage);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    if (!fullscreen) {
-      return undefined;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') {
-        return;
-      }
-      if (selectedItemKey || selectedClusterKey || localDetailsOpen) {
-        return;
-      }
-
-      setFullscreen(false);
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [fullscreen, localDetailsOpen, selectedClusterKey, selectedItemKey]);
-
-  useEffect(() => {
-    if (!fullscreen) {
-      return undefined;
-    }
-
-    const handleWheel = (event: globalThis.WheelEvent) => {
-      if (shouldPreventFullscreenScrollLeak(event.target, event.deltaY)) {
-        event.preventDefault();
-      }
-    };
-    const handleTouchMove = (event: TouchEvent) => {
-      if (!(event.target instanceof Element) || !event.target.closest('.map-panel-fullscreen')) {
-        event.preventDefault();
-      }
-    };
-
-    window.addEventListener('wheel', handleWheel, { capture: true, passive: false });
-    window.addEventListener('touchmove', handleTouchMove, { capture: true, passive: false });
-    return () => {
-      window.removeEventListener('wheel', handleWheel, { capture: true });
-      window.removeEventListener('touchmove', handleTouchMove, { capture: true });
-    };
-  }, [fullscreen]);
-
-  useEffect(() => {
-    if (!isPanning) {
-      return undefined;
-    }
-
-    const handleWindowPointerMove = (event: PointerEvent) => {
-      const dragState = dragStateRef.current;
-      if (!dragState || dragState.pointerId !== event.pointerId) {
-        return;
-      }
-
-      event.preventDefault();
-      const deltaX = event.clientX - dragState.startX;
-      const deltaY = event.clientY - dragState.startY;
-      if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
-        suppressNextMapClickRef.current = true;
-      }
-
-      setPan({
-        x: clampMapPan(dragState.originX + deltaX, zoom),
-        y: clampMapPan(dragState.originY + deltaY, zoom)
-      });
-    };
-
-    const stopWindowPan = (event: PointerEvent) => {
-      const dragState = dragStateRef.current;
-      if (!dragState || dragState.pointerId !== event.pointerId) {
-        return;
-      }
-
-      dragStateRef.current = null;
-      setIsPanning(false);
-    };
-
-    window.addEventListener('pointermove', handleWindowPointerMove);
-    window.addEventListener('pointerup', stopWindowPan);
-    window.addEventListener('pointercancel', stopWindowPan);
-
-    return () => {
-      window.removeEventListener('pointermove', handleWindowPointerMove);
-      window.removeEventListener('pointerup', stopWindowPan);
-      window.removeEventListener('pointercancel', stopWindowPan);
-    };
-  }, [isPanning, zoom]);
 
   useEffect(() => {
     if (
@@ -4342,21 +4141,14 @@ function LocationRfMap({
           onClickCapture={handleMapClickCapture}
           onClick={clearMapSelection}
         >
-          <div className="map-toolbar map-viewport-toolbar" aria-label="Map controls">
-            <button type="button" onClick={zoomOut} aria-label="Zoom out">-</button>
-            <span>{Math.round(zoom * 100)}%</span>
-            <button type="button" onClick={zoomIn} aria-label="Zoom in">+</button>
-            <button type="button" onClick={resetZoom}>Reset</button>
-            <button type="button" onClick={() => setFullscreen((current) => !current)}>
-              {fullscreen ? 'Exit full' : 'Full map'}
-            </button>
-          </div>
-          <div className="ap-map-canvas" style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom / layoutZoom})` }}>
-            <div className="map-ring map-ring-near" style={mapRingStyle(26, layoutZoom, mapViewportSize)}><span>{rangeLabels.near}</span></div>
-            <div className="map-ring map-ring-mid" style={mapRingStyle(54, layoutZoom, mapViewportSize)}><span>{rangeLabels.mid}</span></div>
-            <div className="map-ring map-ring-far" style={mapRingStyle(82, layoutZoom, mapViewportSize)}><span>{rangeLabels.far}</span></div>
-            <MapConnectionLayer
+          <RadioMapViewportToolbar viewport={mapViewport} />
+          <div className="ap-map-canvas" style={mapViewport.canvasStyle}>
+            <div className="map-ring map-ring-near" style={radioMapRingStyle(26, layoutZoom, mapViewportSize)}><span>{rangeLabels.near}</span></div>
+            <div className="map-ring map-ring-mid" style={radioMapRingStyle(54, layoutZoom, mapViewportSize)}><span>{rangeLabels.mid}</span></div>
+            <div className="map-ring map-ring-far" style={radioMapRingStyle(82, layoutZoom, mapViewportSize)}><span>{rangeLabels.far}</span></div>
+            <RadioMapConnectionLayer
               links={displayMapLinks}
+              localNodeKey={LOCAL_MAP_NODE_KEY}
               selectedLinkId={selectedLinkId}
               highlightedItemKey={highlightedItemKey}
               highlightedItemKeys={highlightedItemKeys}
@@ -4390,7 +4182,7 @@ function LocationRfMap({
             </button>
             {mapDrawables.map((drawable) => {
               const metricPosition = mapDrawablePositions.get(drawable.id) ?? zoomMapPosition(drawable.position, layoutZoom);
-              const displayPosition = mapMetricPointToViewport(metricPosition, mapViewportSize);
+              const displayPosition = radioMetricPointToViewport(metricPosition, mapViewportSize);
 
               if (drawable.kind === 'cluster') {
                 const topItem = drawable.items[0];
@@ -4787,108 +4579,7 @@ function MapFilterSelect({
   );
 }
 
-function MapConnectionLayer({
-  links,
-  selectedLinkId,
-  highlightedItemKey,
-  highlightedItemKeys,
-  onSelect,
-  onHighlight
-}: {
-  links: MapConnectionLink[];
-  selectedLinkId: string | null;
-  highlightedItemKey: string | null;
-  highlightedItemKeys: Set<string>;
-  onSelect: (linkId: string | null) => void;
-  onHighlight: (itemKey: string | null) => void;
-}) {
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const [viewportSize, setViewportSize] = useState<MapViewportSize>({ width: 0, height: 0 });
 
-  useEffect(() => {
-    const svg = svgRef.current;
-    if (!svg) {
-      return undefined;
-    }
-
-    const updateSize = () => {
-      const rect = svg.getBoundingClientRect();
-      setViewportSize((current) => {
-        const width = Math.round(rect.width);
-        const height = Math.round(rect.height);
-        return current.width === width && current.height === height ? current : { width, height };
-      });
-    };
-
-    updateSize();
-    if (typeof ResizeObserver === 'undefined') {
-      window.addEventListener('resize', updateSize);
-      return () => window.removeEventListener('resize', updateSize);
-    }
-
-    const observer = new ResizeObserver(updateSize);
-    observer.observe(svg);
-    return () => observer.disconnect();
-  }, []);
-
-  if (links.length === 0) {
-    return null;
-  }
-
-  return (
-    <svg ref={svgRef} className="map-connection-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Map links">
-      {links.map((link, index) => {
-        const path = mapConnectionPath(link, index, viewportSize);
-        const width = mapConnectionWidth(link);
-        const isSelected = link.id === selectedLinkId;
-        const hasHighlightedItems = highlightedItemKeys.size > 0;
-        const isHighlighted =
-          highlightedItemKey === LOCAL_MAP_NODE_KEY
-            ? link.sourceKey === null
-            : hasHighlightedItems &&
-              (highlightedItemKeys.has(link.targetKey) ||
-                (link.sourceKey !== null && highlightedItemKeys.has(link.sourceKey)));
-        const hasHighlight = highlightedItemKey === LOCAL_MAP_NODE_KEY || hasHighlightedItems;
-        const isDefaultVisible = !hasHighlight && selectedLinkId === null;
-        if (!isDefaultVisible && !isSelected && !isHighlighted) {
-          return null;
-        }
-
-        const isDimmed = (selectedLinkId !== null && !isSelected) || (selectedLinkId === null && hasHighlight && !isHighlighted);
-        const style = {
-          '--map-link-edge-width': width.edge,
-          '--map-link-core-width': width.core
-        } as CSSProperties;
-        return (
-          <g
-            key={link.id}
-            className={`map-connection map-connection-${link.kind} ${isSelected ? 'map-connection-selected' : ''} ${isHighlighted ? 'map-connection-highlighted' : ''} ${isDimmed ? 'map-connection-dimmed' : ''}`}
-            style={style}
-            role="button"
-            tabIndex={0}
-            aria-label={`${link.label}: ${link.detail}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onHighlight(null);
-              onSelect(isSelected ? null : link.id);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                onHighlight(null);
-                onSelect(isSelected ? null : link.id);
-              }
-            }}
-          >
-            <path className="map-connection-hit" d={path} vectorEffect="non-scaling-stroke" />
-            <path className="map-connection-edge" d={path} vectorEffect="non-scaling-stroke" />
-            <path className="map-connection-core" d={path} vectorEffect="non-scaling-stroke" />
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
 
 function MapHoverTooltipView({ tooltip, pan }: { tooltip: MapHoverTooltip; pan?: MapPan }) {
   const x = clampLayoutValue(tooltip.x, 4, 96);
@@ -8895,6 +8586,10 @@ function filterMapItemsByHistory(
         return ageSeconds !== null && ageSeconds <= 12 * 60 * 60;
       case '24h':
         return ageSeconds !== null && ageSeconds <= 24 * 60 * 60;
+      case '7d':
+        return ageSeconds !== null && ageSeconds <= 7 * 24 * 60 * 60;
+      case '30d':
+        return ageSeconds !== null && ageSeconds <= 30 * 24 * 60 * 60;
       case 'today':
         return Number.isFinite(lastSeenMs) && isSameLocalDay(lastSeenMs, nowMs);
       case 'old':
@@ -10592,50 +10287,12 @@ function zoomMapPosition(position: { x: number; y: number }, zoom: number): { x:
   };
 }
 
-function mapMetricPointToViewport(
-  position: { x: number; y: number },
-  viewportSize: MapViewportSize
-): { x: number; y: number } {
-  if (viewportSize.width <= 0 || viewportSize.height <= 0) {
-    return position;
-  }
-
-  const metricScalePx = Math.min(viewportSize.width, viewportSize.height);
-  return {
-    x: Math.round((50 + ((position.x - 50) * metricScalePx) / viewportSize.width) * 10) / 10,
-    y: Math.round((50 + ((position.y - 50) * metricScalePx) / viewportSize.height) * 10) / 10
-  };
-}
-
 function mapConnectionLinkToViewport(link: MapConnectionLink, viewportSize: MapViewportSize): MapConnectionLink {
   return {
     ...link,
-    start: mapMetricPointToViewport(link.start, viewportSize),
-    end: mapMetricPointToViewport(link.end, viewportSize),
-    avoidPoints: link.avoidPoints?.map((point) => mapMetricPointToViewport(point, viewportSize))
-  };
-}
-
-function mapRingStyle(
-  baseSizePercent: number,
-  zoom: number,
-  viewportSize: MapViewportSize
-): CSSProperties {
-  const size = Math.round(baseSizePercent * zoom * 10) / 10;
-  if (viewportSize.width <= 0 || viewportSize.height <= 0) {
-    return {
-      width: `${size}%`,
-      height: `${size}%`
-    };
-  }
-
-  // Circular radar rings: node distances are laid out against the viewport's
-  // min dimension (see mapMetricPointToViewport), so a circle of this diameter
-  // matches the metric space exactly.
-  const sizePx = Math.round(Math.min(viewportSize.width, viewportSize.height) * (size / 100));
-  return {
-    width: `${sizePx}px`,
-    height: `${sizePx}px`
+    start: radioMetricPointToViewport(link.start, viewportSize),
+    end: radioMetricPointToViewport(link.end, viewportSize),
+    avoidPoints: link.avoidPoints?.map((point) => radioMetricPointToViewport(point, viewportSize))
   };
 }
 
@@ -10799,66 +10456,6 @@ function hashString(value: string): number {
 
 function clampPercent(value: number): number {
   return Math.min(92, Math.max(8, Math.round(value * 10) / 10));
-}
-
-function clampMapZoom(value: number): number {
-  return Math.min(4, Math.max(0.35, Math.round(value * 100) / 100));
-}
-
-function adjustMapPanForZoom(
-  pan: MapPan,
-  fromZoom: number,
-  toZoom: number,
-  stageRect: DOMRect | null,
-  anchor?: { clientX: number; clientY: number }
-): MapPan {
-  const ratio = toZoom / Math.max(0.01, fromZoom);
-  const centerX = stageRect ? stageRect.width / 2 : 0;
-  const centerY = stageRect ? stageRect.height / 2 : 0;
-  const anchorX = stageRect && anchor ? anchor.clientX - stageRect.left : centerX;
-  const anchorY = stageRect && anchor ? anchor.clientY - stageRect.top : centerY;
-  const nextX = pan.x * ratio + (anchorX - centerX) * (1 - ratio);
-  const nextY = pan.y * ratio + (anchorY - centerY) * (1 - ratio);
-
-  return {
-    x: clampMapPan(nextX, toZoom),
-    y: clampMapPan(nextY, toZoom)
-  };
-}
-
-function clampMapPan(value: number, zoom: number): number {
-  const maxPan = Math.round(560 * Math.max(0, zoom - 0.82));
-  return Math.min(maxPan, Math.max(-maxPan, Math.round(value)));
-}
-
-function shouldPreventFullscreenScrollLeak(target: EventTarget | null, deltaY: number): boolean {
-  if (!(target instanceof Element)) {
-    return true;
-  }
-
-  const panel = target.closest('.map-panel-fullscreen');
-  if (!(panel instanceof HTMLElement)) {
-    return true;
-  }
-
-  const scrollTarget = target.closest('.map-side-list, .map-panel-fullscreen');
-  if (!(scrollTarget instanceof HTMLElement)) {
-    return true;
-  }
-
-  const canScroll = scrollTarget.scrollHeight > scrollTarget.clientHeight + 1;
-  if (!canScroll) {
-    return true;
-  }
-
-  if (deltaY < 0) {
-    return scrollTarget.scrollTop <= 0;
-  }
-  if (deltaY > 0) {
-    return scrollTarget.scrollTop + scrollTarget.clientHeight >= scrollTarget.scrollHeight - 1;
-  }
-
-  return false;
 }
 
 function networkDeviceVisual(network: WindowsWifiNetwork): NetworkDeviceVisual {

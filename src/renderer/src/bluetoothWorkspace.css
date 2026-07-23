@@ -1,0 +1,249 @@
+.bluetooth-layout {
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.ble-command-strip {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 8px 12px;
+  border: 1px solid rgba(252, 238, 10, 0.26);
+  background: #171712;
+}
+
+.ble-command-status {
+  min-width: 230px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ble-command-status > div {
+  display: grid;
+  gap: 4px;
+}
+
+.ble-command-status strong {
+  color: #fcee0a;
+  font: 800 0.76rem/1.1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.ble-command-status small {
+  color: #8f8b6d;
+  font: 0.68rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.ble-live-dot {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  border: 1px solid #77745f;
+  background: #27271f;
+  box-shadow: 0 0 0 4px rgba(252, 238, 10, 0.04);
+}
+
+.ble-live-dot.active {
+  border-color: #fcee0a;
+  background: #fcee0a;
+  box-shadow: 0 0 14px rgba(252, 238, 10, 0.55);
+  animation: ble-pulse 1s infinite alternate;
+}
+
+@keyframes ble-pulse {
+  to { opacity: 0.45; }
+}
+
+.ble-command-strip .bluetooth-actions {
+  flex-wrap: nowrap;
+}
+
+.ble-command-strip .bluetooth-actions input,
+.ble-command-strip .bluetooth-actions select {
+  min-height: 28px;
+  height: 28px;
+  border-radius: 0;
+  padding-block: 4px;
+}
+
+.ble-command-strip .bluetooth-actions input {
+  width: 180px;
+}
+
+.ble-demo-banner {
+  margin: 0;
+  padding: 7px 10px;
+  border-left: 3px solid #fcee0a;
+  background: rgba(252, 238, 10, 0.07);
+  color: #bdb88d;
+  font: 0.7rem/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.ble-view-layout {
+  display: grid;
+  gap: 12px;
+}
+
+.ble-overview-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.75fr) minmax(260px, 0.75fr) minmax(360px, 1.3fr);
+  gap: 12px;
+}
+
+.ble-breakdown {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.ble-breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(70px, 1.4fr) 30px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+}
+
+.ble-breakdown-row > span {
+  overflow: hidden;
+  color: #d8d4b8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ble-breakdown-row > i {
+  height: 7px;
+  display: block;
+  border: 1px solid rgba(252, 238, 10, 0.16);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.ble-breakdown-row > i b {
+  height: 100%;
+  display: block;
+  background: #a7c43d;
+}
+
+.ble-breakdown-row > strong {
+  color: #fcee0a;
+  text-align: right;
+}
+
+.ble-overview-nearby {
+  max-height: 340px;
+  overflow: auto;
+}
+
+.ble-nearby-row,
+.ble-map-list-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border: 0;
+  border-bottom: 1px solid rgba(252, 238, 10, 0.14);
+  background: transparent;
+  color: #eae6cb;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ble-nearby-row:hover,
+.ble-map-list-row:hover {
+  background: rgba(252, 238, 10, 0.06);
+}
+
+.ble-nearby-row > span,
+.ble-map-list-row > span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.ble-nearby-row small,
+.ble-map-list-row small {
+  overflow: hidden;
+  color: #8f8b6d;
+  font-size: 0.7rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ble-nearby-row > b,
+.ble-map-list-row > b {
+  color: #fcee0a;
+  font: 700 0.75rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.ble-detector-coverage {
+  display: grid;
+  grid-template-columns: minmax(210px, 1.1fr) repeat(4, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.ble-detector-coverage h2 {
+  margin: 4px 0 0;
+}
+
+.ble-coverage-item {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+  padding-left: 12px;
+  border-left: 2px solid rgba(252, 238, 10, 0.4);
+}
+
+.ble-coverage-item strong {
+  color: #f5f0ce;
+  font-size: 0.78rem;
+}
+
+.ble-coverage-item span {
+  color: #8f8b6d;
+  font-size: 0.69rem;
+  line-height: 1.4;
+}
+
+.ble-findings-empty {
+  min-height: 260px;
+  display: grid;
+  place-content: center;
+  text-align: center;
+}
+
+@media (max-width: 1180px) {
+  .ble-command-strip,
+  .ble-command-strip .bluetooth-actions {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .ble-overview-grid {
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+  }
+
+  .ble-overview-nearby {
+    grid-column: 1 / -1;
+  }
+
+  .ble-detector-coverage {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .ble-overview-grid,
+  .ble-detector-coverage {
+    grid-template-columns: 1fr;
+  }
+
+  .ble-command-strip .bluetooth-actions input {
+    width: 150px;
+  }
+}

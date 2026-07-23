@@ -1,0 +1,151 @@
+.wifi-report-analytics {
+  display: grid;
+  gap: 10px;
+}
+
+.wifi-report-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.wifi-report-heading h2 {
+  margin: 4px 0 6px;
+}
+
+.wifi-report-heading p:last-child {
+  margin-bottom: 0;
+}
+
+.report-export-button {
+  border-color: #fcee0a !important;
+  color: #fcee0a !important;
+}
+
+.report-export-status {
+  margin: 0;
+  padding: 7px 10px;
+  border-left: 3px solid #fcee0a;
+  background: rgba(252, 238, 10, 0.05);
+  color: #b7b292;
+  font: 0.68rem/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+  word-break: break-all;
+}
+
+.wifi-report-chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(420px, 1fr));
+  gap: 10px;
+}
+
+.wifi-report-chart-grid > .panel:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.wifi-history-chart-wrap {
+  overflow-x: auto;
+}
+
+.wifi-history-chart {
+  min-width: 620px;
+  width: 100%;
+  height: 230px;
+  display: block;
+}
+
+.wifi-chart-grid {
+  stroke: rgba(234, 230, 203, 0.12);
+  stroke-width: 1;
+}
+
+.wifi-chart-axis {
+  fill: #928f7b;
+  font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.wifi-chart-legend {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  color: #928f7b;
+  font-size: 0.68rem;
+}
+
+.wifi-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.wifi-chart-legend i {
+  width: 14px;
+  height: 3px;
+}
+
+.wifi-history-chart-empty {
+  min-height: 230px;
+  display: grid;
+  place-content: center;
+  color: #8f8b6d;
+}
+
+.wifi-report-breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.wifi-change-table-wrap {
+  overflow-x: auto;
+}
+
+.wifi-change-table {
+  width: 100%;
+  min-width: 660px;
+  border-collapse: collapse;
+}
+
+.wifi-change-table th,
+.wifi-change-table td {
+  padding: 9px 11px;
+  border-bottom: 1px solid rgba(252, 238, 10, 0.12);
+  text-align: left;
+}
+
+.wifi-change-table th {
+  color: #8f8b6d;
+  font: 700 0.66rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.wifi-change-table td {
+  color: #d8d4b8;
+  font: 0.75rem/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+@media (max-width: 1180px) {
+  .wifi-report-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wifi-report-chart-grid > .panel:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .wifi-report-breakdown-grid {
+    grid-template-columns: repeat(2, minmax(210px, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .wifi-report-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wifi-report-breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+}

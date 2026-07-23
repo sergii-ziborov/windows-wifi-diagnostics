@@ -1,7 +1,17 @@
 import { useMemo, useState } from 'react';
-import type { DesktopBleHistoryArchive, DesktopBleHistorySession } from '../../platform/bleHistory';
+import type { DesktopBleHistoryArchive } from '../../platform/bleHistory';
 import { analyzeBleHistory, shortBleIdentity, type BleAnalyticsWindow } from './bleAnalytics';
+import {
+  BleActivityTimelineChart,
+  BleChurnChart,
+  BleFindingHistoryChart,
+  BleRecurrenceMatrixChart,
+  BleRssiHistoryChart,
+  BleSystemHistoryChart
+} from './BluetoothHistoryCharts';
 import { BluetoothMetric } from './BluetoothMetric';
+import { RadioPresenceTable } from './RadioPresenceTable';
+import { buildBluetoothHistoryReportHtml } from './radioReportPdf';
 
 const WINDOWS: Array<{ value: BleAnalyticsWindow; label: string }> = [
   { value: '1h', label: '1 hour' },
@@ -12,17 +22,29 @@ const WINDOWS: Array<{ value: BleAnalyticsWindow; label: string }> = [
 
 export function BluetoothAnalytics({ history }: { history: DesktopBleHistoryArchive | null }) {
   const [window, setWindow] = useState<BleAnalyticsWindow>('24h');
-  const analytics = useMemo(
-    () => analyzeBleHistory(history, window),
-    [history, window]
-  );
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
+  const analytics = useMemo(() => analyzeBleHistory(history, window), [history, window]);
+
+  async function exportPdf(): Promise<void> {
+    if (!globalThis.window.monitor?.exportReportPdf) {
+      setExportStatus('PDF export is unavailable in this build.');
+      return;
+    }
+    setExportStatus('Preparing PDF…');
+    const label = WINDOWS.find((option) => option.value === window)?.label ?? window;
+    const result = await globalThis.window.monitor.exportReportPdf({
+      filename: 'radiochron-bluetooth-history.pdf',
+      html: buildBluetoothHistoryReportHtml(analytics, label)
+    });
+    setExportStatus(result.saved ? `Saved: ${result.path}` : result.error ?? 'PDF export cancelled.');
+  }
 
   return (
     <section className="ble-analytics-layout">
       <div className="ble-analytics-toolbar">
         <div>
           <p className="bluetooth-eyebrow">Observed scan sessions only</p>
-          <h2>Bluetooth history analytics</h2>
+          <h2>Bluetooth analytics</h2>
         </div>
         <div className="ble-window-switch" aria-label="Bluetooth analytics time window">
           {WINDOWS.map((option) => (
@@ -35,54 +57,79 @@ export function BluetoothAnalytics({ history }: { history: DesktopBleHistoryArch
               {option.label}
             </button>
           ))}
+          <button type="button" className="report-export-button" onClick={() => void exportPdf()}>
+            Export PDF
+          </button>
         </div>
       </div>
+      {exportStatus ? <p className="report-export-status">{exportStatus}</p> : null}
 
       {history?.storage_warning ? <p className="error banner">{history.storage_warning}</p> : null}
 
       <section className="bluetooth-kpis" aria-label="Bluetooth history summary">
         <BluetoothMetric label="Scan sessions" value={analytics.sessionCount} />
         <BluetoothMetric label="Observations" value={analytics.observationCount} />
-        <BluetoothMetric label="Unique identities" value={analytics.uniqueIdentityCount} />
+        <BluetoothMetric label="RF / system devices" value={`${analytics.uniqueIdentityCount} / ${analytics.uniqueSystemDeviceCount}`} />
         <BluetoothMetric
           label="Findings"
           value={analytics.findingCount}
           tone={analytics.highFindingCount > 0 ? 'danger' : 'neutral'}
         />
+        <BluetoothMetric label="New ≤24h" value={analytics.newPresenceCount} />
+        <BluetoothMetric label="Sample-stable" value={analytics.stablePresenceCount} />
+        <BluetoothMetric label="Dormant >7d" value={analytics.dormantPresenceCount} />
       </section>
 
       {analytics.sessions.length ? (
         <>
-          <article className="panel ble-session-chart-panel">
-            <div className="panel-heading">
-              <h2>Identities per scan</h2>
-              <span className="muted">Real timestamps; no smoothing or inferred samples</span>
-            </div>
-            <BleSessionChart sessions={analytics.sessions} />
+          <article className="panel">
+            <ChartTitle
+              title="Radio and system activity"
+              detail="Select or drag across exact retained scan timestamps"
+            />
+            <BleActivityTimelineChart sessions={analytics.sessions} />
           </article>
 
-          <article className="panel">
-            <div className="panel-heading">
-              <h2>Recurrence matrix</h2>
-              <span className="muted">Last {Math.min(16, analytics.sessions.length)} scans</span>
-            </div>
-            <BleRecurrenceMatrix sessions={analytics.sessions} identityKeys={analytics.identities.map((item) => item.identityKey)} />
-          </article>
+          <section className="wifi-report-chart-grid">
+            <article className="panel">
+              <ChartTitle title="RSSI by identity" detail="Gaps remain gaps; no inferred samples" />
+              <BleRssiHistoryChart analytics={analytics} />
+            </article>
+            <article className="panel">
+              <ChartTitle title="Identity pulse watch" detail="Appeared vs not observed transitions" />
+              <BleChurnChart analytics={analytics} />
+            </article>
+            <article className="panel">
+              <ChartTitle title="System inventory" detail={`${analytics.connectedSystemDeviceCount} connected in latest scan`} />
+              <BleSystemHistoryChart sessions={analytics.sessions} />
+            </article>
+            <article className="panel">
+              <ChartTitle title="Detector pulse watch" detail="Warnings and high evidence by scan" />
+              <BleFindingHistoryChart sessions={analytics.sessions} />
+            </article>
+          </section>
 
           <article className="panel">
-            <div className="panel-heading">
-              <h2>Identity evidence</h2>
-              <span className="muted">Coverage means observed scans, not continuous physical presence</span>
-            </div>
+            <ChartTitle
+              title="Recurrence and RSSI matrix"
+              detail={`Interactive evidence across the last ${Math.min(24, analytics.sessions.length)} scans`}
+            />
+            <BleRecurrenceMatrixChart sessions={analytics.sessions} analytics={analytics} />
+          </article>
+
+          <RadioPresenceTable
+            title="Bluetooth presence patterns"
+            detail="1/7/30-day sampled stability, weekday recurrence, new and dormant identities"
+            rows={analytics.presenceRecords}
+          />
+
+          <article className="panel">
+            <ChartTitle title="Identity evidence" detail="Coverage means observed scans, not continuous presence" />
             <div className="ble-analytics-table-wrap">
               <table className="ble-analytics-table">
                 <thead>
                   <tr>
-                    <th>Identity</th>
-                    <th>Scan coverage</th>
-                    <th>First / last scan</th>
-                    <th>RSSI evidence</th>
-                    <th>Findings</th>
+                    <th>Identity</th><th>Scan coverage</th><th>First / last scan</th><th>RSSI evidence</th><th>Findings</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -91,7 +138,7 @@ export function BluetoothAnalytics({ history }: { history: DesktopBleHistoryArch
                       <td>
                         <strong>{identity.label}</strong>
                         <small title={identity.identityKey}>{shortBleIdentity(identity.identityKey)}</small>
-                        <small>{formatIdentityConfidence(identity.confidence)}</small>
+                        <small>{identity.confidence.replaceAll('_', ' ')}</small>
                       </td>
                       <td>
                         <strong>{identity.scanCoveragePercent}%</strong>
@@ -134,132 +181,8 @@ export function BluetoothAnalytics({ history }: { history: DesktopBleHistoryArch
   );
 }
 
-function BleSessionChart({ sessions }: { sessions: DesktopBleHistorySession[] }) {
-  const width = 960;
-  const height = 220;
-  const left = 48;
-  const right = 16;
-  const top = 20;
-  const bottom = 36;
-  const plotWidth = width - left - right;
-  const plotHeight = height - top - bottom;
-  const firstMs = sessions[0].observed_at_ms;
-  const lastMs = sessions.at(-1)!.observed_at_ms;
-  const spanMs = Math.max(1, lastMs - firstMs);
-  const counts = sessions.map((session) => new Set(session.points.map((point) => point.identity_key)).size);
-  const maximum = Math.max(1, ...counts);
-  const barWidth = Math.max(4, Math.min(24, plotWidth / Math.max(1, sessions.length) * 0.55));
-
-  return (
-    <div className="ble-session-chart-wrap">
-      <svg className="ble-session-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Unique Bluetooth identities observed per scan session">
-        {[0, 0.5, 1].map((ratio) => {
-          const y = top + plotHeight * ratio;
-          const value = Math.round(maximum * (1 - ratio));
-          return (
-            <g key={ratio}>
-              <line x1={left} x2={width - right} y1={y} y2={y} className="ble-chart-grid" />
-              <text x={left - 10} y={y + 4} className="ble-chart-axis" textAnchor="end">{value}</text>
-            </g>
-          );
-        })}
-        {sessions.map((session, index) => {
-          const x = left + ((session.observed_at_ms - firstMs) / spanMs) * plotWidth;
-          const count = counts[index];
-          const barHeight = count / maximum * plotHeight;
-          const severity = highestSeverity(session);
-          return (
-            <rect
-              key={session.scan_id}
-              x={Math.min(width - right - barWidth, Math.max(left, x - barWidth / 2))}
-              y={top + plotHeight - barHeight}
-              width={barWidth}
-              height={Math.max(2, barHeight)}
-              rx="3"
-              className={`ble-chart-bar ble-chart-bar-${severity}`}
-            >
-              <title>
-                {formatDateTime(session.observed_at_ms)} · {count} identities · {session.points.length} observations
-              </title>
-            </rect>
-          );
-        })}
-        <text x={left} y={height - 10} className="ble-chart-axis">{formatDateTime(firstMs)}</text>
-        <text x={width - right} y={height - 10} className="ble-chart-axis" textAnchor="end">{formatDateTime(lastMs)}</text>
-      </svg>
-    </div>
-  );
-}
-
-function BleRecurrenceMatrix({
-  sessions,
-  identityKeys
-}: {
-  sessions: DesktopBleHistorySession[];
-  identityKeys: string[];
-}) {
-  const visibleSessions = sessions.slice(-16);
-  const visibleKeys = identityKeys.slice(0, 10);
-  return (
-    <div className="ble-matrix-wrap">
-      <table className="ble-matrix">
-        <thead>
-          <tr>
-            <th>Identity</th>
-            {visibleSessions.map((session) => (
-              <th key={session.scan_id} title={formatDateTime(session.observed_at_ms)}>
-                {formatTime(session.observed_at_ms)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {visibleKeys.map((identityKey) => {
-            const labelPoint = [...visibleSessions]
-              .reverse()
-              .flatMap((session) => session.points)
-              .find((point) => point.identity_key === identityKey);
-            return (
-              <tr key={identityKey}>
-                <th title={identityKey}>{labelPoint?.local_name || labelPoint?.protocol || shortBleIdentity(identityKey)}</th>
-                {visibleSessions.map((session) => {
-                  const point = session.points.find((item) => item.identity_key === identityKey);
-                  return (
-                    <td key={session.scan_id}>
-                      <span
-                        className={point ? `ble-matrix-cell ${rssiTone(point.rssi_dbm)}` : 'ble-matrix-cell empty'}
-                        title={point
-                          ? `${formatDateTime(session.observed_at_ms)} · ${point.rssi_dbm} dBm`
-                          : `${formatDateTime(session.observed_at_ms)} · not observed in this scan`}
-                      >
-                        {point ? point.rssi_dbm : '–'}
-                      </span>
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function highestSeverity(session: DesktopBleHistorySession): 'neutral' | 'warning' | 'high' {
-  if (session.findings.some((finding) => finding.severity === 'high')) return 'high';
-  if (session.findings.some((finding) => finding.severity === 'warning')) return 'warning';
-  return 'neutral';
-}
-
-function rssiTone(rssiDbm: number): 'strong' | 'medium' | 'weak' {
-  if (rssiDbm >= -60) return 'strong';
-  if (rssiDbm >= -75) return 'medium';
-  return 'weak';
-}
-
-function formatIdentityConfidence(value: string): string {
-  return value.replaceAll('_', ' ');
+function ChartTitle({ title, detail }: { title: string; detail: string }) {
+  return <div className="panel-heading"><h2>{title}</h2><span className="muted">{detail}</span></div>;
 }
 
 function formatDateTime(value: number): string {
@@ -269,8 +192,4 @@ function formatDateTime(value: number): string {
     hour: '2-digit',
     minute: '2-digit'
   });
-}
-
-function formatTime(value: number): string {
-  return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }

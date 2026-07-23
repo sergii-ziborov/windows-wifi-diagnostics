@@ -59,11 +59,35 @@ describe('BLE history analytics', () => {
     expect(analytics.highFindingCount).toBe(1);
     expect(analytics.identities[0].highFindingCount).toBe(1);
   });
+
+  it('keeps system inventory and radio churn as separate evidence', () => {
+    const nowMs = Date.UTC(2026, 6, 23, 12);
+    const first = session('one', nowMs - 10_000, [point('a', -60)]);
+    first.system_devices = [{
+      id: 'windows:mouse',
+      name: 'MX Master 2S',
+      transport: 'ble',
+      paired: true,
+      connected: true,
+      category: 'Mouse',
+      appearance: 962
+    }];
+    first.system_device_count = 1;
+    const second = session('two', nowMs, [point('b', -70)]);
+    second.system_devices = first.system_devices;
+    second.system_device_count = 1;
+
+    const analytics = analyzeBleHistory(history(nowMs, [first, second]), 'all', nowMs);
+
+    expect(analytics.uniqueSystemDeviceCount).toBe(1);
+    expect(analytics.connectedSystemDeviceCount).toBe(1);
+    expect(analytics.changes).toEqual([{ tsMs: nowMs, appeared: 1, notObserved: 1 }]);
+  });
 });
 
 function history(nowMs: number, sessions: DesktopBleHistorySession[]): DesktopBleHistoryArchive {
   return {
-    schema_version: 1,
+    schema_version: 3,
     generated_at_ms: nowMs,
     storage_warning: null,
     retention: { max_age_days: 30, max_sessions: 512 },
@@ -79,8 +103,10 @@ function session(scanId: string, observedAtMs: number, points: DesktopBleHistory
     elapsed_ms: 500,
     adapter_count: 1,
     advertisement_count: points.length,
+    system_device_count: 0,
     error_count: 0,
     points,
+    system_devices: [],
     findings: []
   };
 }

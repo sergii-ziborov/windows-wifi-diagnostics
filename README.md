@@ -25,9 +25,21 @@ administered, and IP addresses come from documentation-only ranges.
 
 ![RadioChron Desktop network controls with synthetic addresses](docs/screenshots/radiochron-desktop-network.png)
 
-![RadioChron Desktop Bluetooth history with synthetic beacons](docs/screenshots/radiochron-desktop-bluetooth.png)
+![RadioChron Desktop Wi-Fi analytics with evidence timeline, pulse watch and signal matrices](docs/screenshots/radiochron-desktop-analytics.png)
 
-![RadioChron Desktop Bluetooth scan-session analytics with synthetic beacons](docs/screenshots/radiochron-desktop-bluetooth-analytics.png)
+![RadioChron Desktop Bluetooth overview with synthetic beacons](docs/screenshots/radiochron-desktop-bluetooth.png)
+
+![RadioChron Desktop Bluetooth relative RF map](docs/screenshots/radiochron-desktop-bluetooth-map.png)
+
+![RadioChron Desktop local Bluetooth sensor and typed relationships](docs/screenshots/radiochron-desktop-bluetooth-sensor-detail.png)
+
+![RadioChron Desktop Bluetooth device intelligence](docs/screenshots/radiochron-desktop-bluetooth-devices.png)
+
+![RadioChron Desktop Bluetooth evidence detail](docs/screenshots/radiochron-desktop-bluetooth-device-detail.png)
+
+![RadioChron Desktop Bluetooth scan-session analytics](docs/screenshots/radiochron-desktop-bluetooth-analytics.png)
+
+![RadioChron Desktop Bluetooth 1, 7 and 30-day presence patterns](docs/screenshots/radiochron-desktop-bluetooth-presence.png)
 
 ![RadioChron Desktop channel pressure view with synthetic access points](docs/screenshots/radiochron-desktop-channels.png)
 
@@ -44,13 +56,37 @@ administered, and IP addresses come from documentation-only ranges.
   local identity history, persistence/disappearance, possible-clone and beacon
   flood evidence. Findings always include limitations; RSSI is not presented
   as physical distance.
-- A top-level Wi-Fi/Bluetooth mode switch plus retained BLE scan analytics:
-  real-timestamp activity bars, session-by-identity recurrence, scan coverage,
-  and RSSI distribution without smoothing or inferred observations.
+- Windows system Bluetooth inventory through DeviceInformation for friendly
+  names, Classic/BLE transport, paired/connected state, and OS device type.
+  It is joined to advertising evidence only when the Bluetooth address matches
+  exactly; connected devices such as mice remain visible even when they are
+  not currently advertising.
+- Equal top-level Wi-Fi/Bluetooth workspaces. Bluetooth has Overview, relative
+  RF Map, searchable Devices, Analytics, and Findings views with stable shared
+  navigation and scanner controls.
+- BLE device intelligence resolves 3,900+ Bluetooth SIG Company IDs from a
+  pinned MIT-licensed assigned-numbers snapshot, interprets common assigned
+  services and beacon/Fast Pair signatures, and exposes evidence in a detailed
+  device card. Unknown identifiers remain visible instead of being guessed.
+- Wi-Fi and Bluetooth share one RF-map viewport engine: anchored Ctrl+wheel
+  zoom, pointer pan, fullscreen, circular metric-space rings, ResizeObserver
+  sizing, spread profiles, deterministic collision separation, search, and
+  retained-history filters through 30 days. The clickable `You` node exposes
+  typed connected, paired, observed, retained, and OS-inventory relationships.
+  System-only devices without RSSI stay in an explicit OS-inventory lane and
+  never receive a fake RF position.
+- Retained BLE Analytics combines selectable exact-scan timelines, identity
+  and detector pulse watches, an RSSI/recurrence matrix, system connected-device
+  counts, scan coverage, and filterable 1/7/30-day sampled-presence patterns
+  including new, stable, weekday, recurring, intermittent and dormant evidence.
+- Wi-Fi Analytics combines exact-snapshot timelines, an appeared/not-observed
+  pulse watch, band/AP signal matrices, current security/vendor/channel
+  breakdowns, and the same 1/7/30-day presence-pattern model.
 - Saved baseline runs, comparisons, reconnect/environment observations,
   evidence timelines, and diagnostic bundles.
 - AP/device inventory, a relative RF map, channel-pressure view, passive
-  vulnerability context, and PDF evidence reports.
+  vulnerability context, rich Wi-Fi/Bluetooth history PDFs, and expanded
+  location/LAN evidence reports.
 - Windows-only WLAN AutoConfig history, saved-profile inspection,
   local-neighbor workflow, and temporary scan-identity controls.
 - A safe screenshot mode that never reads the host radio or network identity.
@@ -65,6 +101,7 @@ or real AP nodes remain readable instead of collapsing around the center.
 | Current association | yes | yes | yes |
 | Nearby BSS + beacon metadata | yes | yes | yes |
 | BLE advertisements + local history | yes | yes | yes |
+| Paired/connected Bluetooth names and type | yes | advertisement evidence only | advertisement evidence only |
 | Saved RadioChron baselines | yes | yes | yes |
 | WLAN AutoConfig event history | yes | no OS equivalent | no OS equivalent |
 | Saved Wi-Fi key / scan identity controls | yes | no | no |
@@ -122,6 +159,12 @@ Regenerate the same privacy-safe screenshots used by this README and the site:
 npm run screenshots
 ```
 
+Refresh the pinned, generated Bluetooth Company ID lookup:
+
+```sh
+npm run data:ble-assigned-numbers
+```
+
 `RADIOCHRON_DEMO=1` activates synthetic IPC fixtures. The fixture uses
 `192.0.2.0/24`, `2001:db8::/32`, invented BLE beacons, and locally administered
 MAC addresses. It does not query CoreWLAN, CoreBluetooth, Windows WLAN/Bluetooth
@@ -160,15 +203,18 @@ writes SHA-256 manifests, and creates a draft GitHub release for final review.
 - No telemetry, cookies, or analytics.
 - Runtime state stays in the Electron user-data directory unless exported.
 - BLE analytics retain privacy-minimized scan sessions for at most 30 days or
-  512 scans. Raw Bluetooth addresses are not written to that archive, and
-  `Reset local history` clears it together with the Rust tracker.
+  512 scans. Raw Bluetooth addresses and manufacturer/service payload bytes are
+  not written to that archive. It retains opaque identity keys, Company IDs,
+  advertised service UUIDs, names, RSSI, zones, and timestamps; `Reset history`
+  clears it together with the Rust tracker.
 - SSIDs, BSSIDs, MAC addresses, IP configuration, and diagnostic bundles are
   sensitive network/location evidence; inspect them before sharing.
 - Saved Wi-Fi secrets are Windows-only, revealed only after an explicit action,
   and never written to RadioChron inventory or demo fixtures.
 - The renderer has no Node access; preload exposes a bounded, validated IPC API.
 
-See [PRIVACY.md](PRIVACY.md) and [SECURITY.md](SECURITY.md).
+See [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md), and
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Repository family
 

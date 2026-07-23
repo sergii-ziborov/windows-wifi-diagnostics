@@ -1,0 +1,92 @@
+.radio-chart-empty {
+  min-height: 230px;
+  display: grid;
+  place-content: center;
+  color: #8f8b6d;
+}
+
+.radio-timeline {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.radio-chart-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.radio-chart-selection > div {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid rgba(252, 238, 10, 0.12);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.radio-chart-selection span,
+.radio-chart-selection strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.radio-chart-selection span {
+  color: #8f8b6d;
+  font: 700 0.58rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  text-transform: uppercase;
+}
+
+.radio-chart-selection strong {
+  margin-top: 3px;
+  color: #eae6cb;
+  font: 800 0.69rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.radio-timeline-chart {
+  width: 100%;
+  min-width: 620px;
+  height: 246px;
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.radio-chart-grid {
+  stroke: rgba(234, 230, 203, 0.12);
+  stroke-dasharray: 4 6;
+  stroke-width: 1;
+}
+
+.radio-chart-axis {
+  fill: #928f7b;
+  font: 11px ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+
+.radio-chart-cursor {
+  stroke: rgba(252, 238, 10, 0.68);
+  stroke-dasharray: 3 4;
+  stroke-width: 1.4;
+}
+
+.radio-chart-legend {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #928f7b;
+  font-size: 0.66rem;
+}
+
+.radio-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.radio-chart-legend i {
+  width: 14px;
+  height: 3px;
+}

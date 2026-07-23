@@ -20,8 +20,8 @@ export function demoBleScanResult(): DesktopBleViewResult {
           tx_power_dbm: -8,
           connectable: false,
           service_uuids: ['0000feaa-0000-1000-8000-00805f9b34fb'],
-          manufacturer_data: [],
-          service_data: [],
+          manufacturer_data: [{ company_id: 0x0059, data: [0x10, 0x42, 0x01] }],
+          service_data: [{ uuid: 'feaa', data: [0x00, 0xee, 0x01, 0x02] }],
           protocol_identity: 'demo:environment-beacon'
         },
         {
@@ -32,9 +32,9 @@ export function demoBleScanResult(): DesktopBleViewResult {
           tx_power_dbm: null,
           connectable: true,
           service_uuids: [],
-          manufacturer_data: [],
+          manufacturer_data: [{ company_id: 0x067c, data: [0x01, 0x22, 0x43] }],
           service_data: [],
-          protocol_identity: null
+          protocol_identity: 'demo:private-tag'
         },
         {
           address: '02:00:00:BE:AC:03',
@@ -44,9 +44,83 @@ export function demoBleScanResult(): DesktopBleViewResult {
           tx_power_dbm: -12,
           connectable: false,
           service_uuids: [],
-          manufacturer_data: [],
+          manufacturer_data: [{ company_id: 0x004c, data: [0x02, 0x15, 0x10, 0x20] }],
           service_data: [],
           protocol_identity: 'demo:asset-beacon'
+        },
+        {
+          address: '02:00:00:BE:AC:04',
+          address_type: 'resolvable_private',
+          local_name: 'Mock Pixel Buds',
+          rssi_dbm: -57,
+          tx_power_dbm: -12,
+          connectable: true,
+          service_uuids: ['0000fe2c-0000-1000-8000-00805f9b34fb'],
+          manufacturer_data: [{ company_id: 0x018e, data: [0x01, 0x02, 0x03] }],
+          service_data: [{ uuid: 'fe2c', data: [0x11, 0x22] }],
+          protocol_identity: null
+        },
+        {
+          address: '02:00:00:BE:AC:05',
+          address_type: 'random_static',
+          local_name: 'Mock Heart Sensor',
+          rssi_dbm: -63,
+          tx_power_dbm: -8,
+          connectable: true,
+          service_uuids: ['0000180d-0000-1000-8000-00805f9b34fb', '0000180f-0000-1000-8000-00805f9b34fb'],
+          manufacturer_data: [{ company_id: 0x0087, data: [0x48, 0x52] }],
+          service_data: [],
+          protocol_identity: null
+        },
+        {
+          address: '02:00:00:BE:AC:06',
+          address_type: 'public',
+          local_name: 'Mock Keyboard',
+          rssi_dbm: -72,
+          tx_power_dbm: null,
+          connectable: true,
+          service_uuids: ['00001812-0000-1000-8000-00805f9b34fb'],
+          manufacturer_data: [{ company_id: 0x01da, data: [0x01] }],
+          service_data: [],
+          protocol_identity: null
+        },
+        {
+          address: '02:00:00:BE:AC:07',
+          address_type: 'non_resolvable_private',
+          local_name: 'Mock Unknown Device',
+          rssi_dbm: -91,
+          tx_power_dbm: null,
+          connectable: false,
+          service_uuids: [],
+          manufacturer_data: [],
+          service_data: [],
+          protocol_identity: null
+        }
+      ],
+      system_devices: [
+        {
+          id: 'windows:mock-mouse',
+          name: 'Mock MX Mouse',
+          address: '02:00:00:BE:AC:21',
+          transport: 'ble',
+          paired: true,
+          connected: true,
+          category: 'Mouse',
+          class_of_device: null,
+          appearance: 962,
+          source: 'windows-device-enumeration'
+        },
+        {
+          id: 'windows:mock-headphones',
+          name: 'Mock Studio Headphones',
+          address: '02:00:00:BE:AC:22',
+          transport: 'classic',
+          paired: true,
+          connected: false,
+          category: 'Audio / video',
+          class_of_device: 2360344,
+          appearance: null,
+          source: 'windows-device-enumeration'
         }
       ],
       errors: []
@@ -140,8 +214,29 @@ export function demoBleHistory(scannedAtMs = Date.now()): DesktopBleHistoryArchi
       elapsed_ms: 1_500,
       adapter_count: 1,
       advertisement_count: points.length,
+      system_device_count: 2,
       error_count: 0,
       points,
+      system_devices: [
+        {
+          id: 'windows:mock-mouse',
+          name: 'Mock MX Mouse',
+          transport: 'ble' as const,
+          paired: true,
+          connected: index >= 7,
+          category: 'Mouse',
+          appearance: 962
+        },
+        {
+          id: 'windows:mock-headphones',
+          name: 'Mock Studio Headphones',
+          transport: 'classic' as const,
+          paired: true,
+          connected: index === 4 || index === 5,
+          category: 'Audio / video',
+          appearance: null
+        }
+      ],
       findings: persistentFinding
         ? [{
             kind: 'persistent_unknown' as const,
@@ -154,7 +249,7 @@ export function demoBleHistory(scannedAtMs = Date.now()): DesktopBleHistoryArchi
   });
 
   return {
-    schema_version: 1,
+    schema_version: 3,
     generated_at_ms: scannedAtMs,
     storage_warning: null,
     retention: {
@@ -179,6 +274,11 @@ function demoPoint(
     local_name: localName,
     address_type: identityConfidence === 'ephemeral_address' ? 'resolvable_private' : 'random_static',
     rssi_dbm: rssiDbm,
-    payload_hash: `mock-payload:${identityKey}`
+    payload_hash: `mock-payload:${identityKey}`,
+    tx_power_dbm: protocol ? -10 : null,
+    connectable: identityKey.includes('private-tag'),
+    service_uuids: identityKey.includes('environment') ? ['0000feaa-0000-1000-8000-00805f9b34fb'] : [],
+    company_ids: identityKey.includes('asset') ? [0x004c] : identityKey.includes('private-tag') ? [0x067c] : [0x0059],
+    service_data_uuids: identityKey.includes('environment') ? ['feaa'] : []
   };
 }

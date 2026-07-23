@@ -13,9 +13,26 @@ export interface DesktopBleScanOptions {
   zone?: string | null;
 }
 
+export interface DesktopBluetoothSystemDevice {
+  id: string;
+  name: string | null;
+  address: string | null;
+  transport: 'ble' | 'classic' | 'dual' | 'unknown';
+  paired: boolean | null;
+  connected: boolean | null;
+  category: string | null;
+  class_of_device: number | null;
+  appearance: number | null;
+  source: string;
+}
+
+export interface DesktopBleRadioScanResult extends RadioChronBleScanResult {
+  system_devices?: DesktopBluetoothSystemDevice[];
+}
+
 export interface DesktopBleScanResult {
   scanned_at_ms: number;
-  scan: RadioChronBleScanResult;
+  scan: DesktopBleRadioScanResult;
   observations: RadioChronBleObservationResult[];
   histories: RadioChronBleHistory[];
   findings: RadioChronBleFinding[];
@@ -25,7 +42,7 @@ export async function scanRadioChronBle(
   options: DesktopBleScanOptions = {},
   client: Pick<RadioChronCoreClient, 'ble'> = getRadioChronCoreClient()
 ): Promise<DesktopBleScanResult> {
-  const scan = await client.ble.scan({ durationMs: options.durationMs });
+  const scan = await client.ble.scan({ durationMs: options.durationMs }) as DesktopBleRadioScanResult;
   const scannedAtMs = Date.now();
   const monotonicMs = Math.floor(process.uptime() * 1_000);
   const observations: RadioChronBleObservationResult[] = [];

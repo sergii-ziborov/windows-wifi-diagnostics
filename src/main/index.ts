@@ -119,24 +119,59 @@ async function captureDemoScreenshots(window: BrowserWindow | null, captureDir: 
       poll();
     })`);
 
-    for (const tab of ['overview', 'map', 'network', 'bluetooth', 'channels']) {
-      await window.webContents.executeJavaScript(
-        `document.querySelector('[data-radio-mode="${tab === 'bluetooth' ? 'bluetooth' : 'wifi'}"]')?.click()`
-      );
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      if (tab !== 'bluetooth') {
-        await window.webContents.executeJavaScript(`document.querySelector('[data-app-tab="${tab}"]')?.click()`);
-      }
+    await window.webContents.executeJavaScript(`document.querySelector('[data-radio-mode="wifi"]')?.click()`);
+    for (const tab of ['overview', 'map', 'network', 'reports', 'channels']) {
+      await window.webContents.executeJavaScript(`document.querySelector('[data-app-tab="${tab}"]')?.click()`);
       await new Promise((resolve) => setTimeout(resolve, 450));
       const image = await window.webContents.capturePage();
       await writeFile(join(captureDir, `radiochron-desktop-${tab}.png`), image.toPNG());
+      if (tab === 'reports') {
+        await writeFile(join(captureDir, 'radiochron-desktop-analytics.png'), image.toPNG());
+        await window.webContents.executeJavaScript(`{
+          const element = document.querySelector('.radio-presence-panel');
+          document.documentElement.style.scrollBehavior = 'auto';
+          if (element) window.scrollTo(0, window.scrollY + element.getBoundingClientRect().top - 58);
+        }`);
+        await new Promise((resolve) => setTimeout(resolve, 180));
+        const patternsImage = await window.webContents.capturePage();
+        await writeFile(join(captureDir, 'radiochron-desktop-wifi-presence.png'), patternsImage.toPNG());
+        await window.webContents.executeJavaScript(`window.scrollTo(0, 0)`);
+      }
     }
     await window.webContents.executeJavaScript(`document.querySelector('[data-radio-mode="bluetooth"]')?.click()`);
     await new Promise((resolve) => setTimeout(resolve, 50));
-    await window.webContents.executeJavaScript(`document.querySelector('[data-bluetooth-view="analytics"]')?.click()`);
-    await new Promise((resolve) => setTimeout(resolve, 450));
-    const analyticsImage = await window.webContents.capturePage();
-    await writeFile(join(captureDir, 'radiochron-desktop-bluetooth-analytics.png'), analyticsImage.toPNG());
+    for (const view of ['overview', 'map', 'devices', 'history', 'findings']) {
+      await window.webContents.executeJavaScript(`document.querySelector('[data-bluetooth-view="${view}"]')?.click()`);
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      const image = await window.webContents.capturePage();
+      const filename = view === 'overview' ? 'radiochron-desktop-bluetooth.png' : `radiochron-desktop-bluetooth-${view}.png`;
+      await writeFile(join(captureDir, filename), image.toPNG());
+      if (view === 'map') {
+        await window.webContents.executeJavaScript(`document.querySelector('.ble-map-center')?.dispatchEvent(new MouseEvent('dblclick', { bubbles: true }))`);
+        await new Promise((resolve) => setTimeout(resolve, 180));
+        const sensorImage = await window.webContents.capturePage();
+        await writeFile(join(captureDir, 'radiochron-desktop-bluetooth-sensor-detail.png'), sensorImage.toPNG());
+        await window.webContents.executeJavaScript(`document.querySelector('.ble-sensor-modal .secondary-button')?.click()`);
+      }
+      if (view === 'history') {
+        await writeFile(join(captureDir, 'radiochron-desktop-bluetooth-analytics.png'), image.toPNG());
+        await window.webContents.executeJavaScript(`{
+          const element = document.querySelector('.radio-presence-panel');
+          document.documentElement.style.scrollBehavior = 'auto';
+          if (element) window.scrollTo(0, window.scrollY + element.getBoundingClientRect().top - 58);
+        }`);
+        await new Promise((resolve) => setTimeout(resolve, 180));
+        const patternsImage = await window.webContents.capturePage();
+        await writeFile(join(captureDir, 'radiochron-desktop-bluetooth-presence.png'), patternsImage.toPNG());
+        await window.webContents.executeJavaScript(`window.scrollTo(0, 0)`);
+      }
+    }
+    await window.webContents.executeJavaScript(`document.querySelector('[data-bluetooth-view="devices"]')?.click()`);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await window.webContents.executeJavaScript(`document.querySelector('.ble-device-table tbody tr:first-child button')?.click()`);
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    const detailImage = await window.webContents.capturePage();
+    await writeFile(join(captureDir, 'radiochron-desktop-bluetooth-device-detail.png'), detailImage.toPNG());
     app.quit();
   } catch (error) {
     console.error('RadioChron demo screenshot capture failed', error);

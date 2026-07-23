@@ -42,6 +42,7 @@
     "typecheck": "tsc --noEmit",
     "check": "npm run typecheck && npm test",
     "native:build": "node scripts/build-native.mjs",
+    "data:ble-assigned-numbers": "node scripts/update-ble-assigned-numbers.mjs",
     "screenshots": "npm run build && node scripts/capture-demo.mjs",
     "dist:win": "npm run native:build && npm run build && electron-builder --win nsis --publish never",
     "dist:mac": "npm run native:build && npm run build && electron-builder --mac dmg zip --publish never",
