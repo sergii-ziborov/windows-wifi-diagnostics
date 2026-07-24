@@ -48,7 +48,7 @@ export function BluetoothMap({
   onSelect
 }: BluetoothMapProps) {
   const [spread, setSpread] = useState<BleMapSpread>('wide');
-  const [historyFilter, setHistoryFilter] = useState<BleMapHistoryFilter>('all');
+  const [historyFilter, setHistoryFilter] = useState<BleMapHistoryFilter>('current');
   const [query, setQuery] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null);

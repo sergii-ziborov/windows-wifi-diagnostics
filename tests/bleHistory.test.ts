@@ -88,9 +88,47 @@ describe('desktop BLE history', () => {
 
     const archive = await readBleHistory(filePath, Date.now());
 
-    expect(archive.schema_version).toBe(3);
+    expect(archive.schema_version).toBe(4);
     expect(archive.sessions).toHaveLength(1);
     expect(archive.sessions[0].system_devices).toEqual([]);
+  });
+
+  it('associates rotating private addresses one-to-one without collapsing simultaneous peers', async () => {
+    const filePath = await tempHistoryFile();
+    const startedAtMs = Date.UTC(2026, 6, 23, 12);
+    const first = await appendBleHistory(filePath, ephemeralResult(startedAtMs, [
+      { identityKey: 'ble-id-v1:first-near', address: '41:00:00:00:00:01', rssiDbm: -40, companyId: 0x004c },
+      { identityKey: 'ble-id-v1:first-far', address: '41:00:00:00:00:02', rssiDbm: -72, companyId: 0x004c }
+    ]), 'Desk');
+    const second = await appendBleHistory(filePath, ephemeralResult(startedAtMs + 30_000, [
+      { identityKey: 'ble-id-v1:rotated-near', address: '41:00:00:00:00:03', rssiDbm: -42, companyId: 0x004c },
+      { identityKey: 'ble-id-v1:rotated-far', address: '41:00:00:00:00:04', rssiDbm: -69, companyId: 0x004c }
+    ]), 'Desk');
+
+    expect(first.sessions[0].points.map((point) => point.tracking_key)).toEqual([
+      'ble-id-v1:first-near',
+      'ble-id-v1:first-far'
+    ]);
+    expect(second.sessions[1].points.map((point) => point.tracking_key)).toEqual([
+      'ble-id-v1:first-near',
+      'ble-id-v1:first-far'
+    ]);
+    expect(second.sessions[1].points.every((point) => point.tracking_confidence === 'probabilistic_rotation')).toBe(true);
+    expect(new Set(second.sessions.flatMap((session) => session.points.map((point) => point.tracking_key))).size).toBe(2);
+  });
+
+  it('does not correlate anonymous private observations outside the short continuity window', async () => {
+    const filePath = await tempHistoryFile();
+    const startedAtMs = Date.UTC(2026, 6, 23, 12);
+    await appendBleHistory(filePath, ephemeralResult(startedAtMs, [
+      { identityKey: 'ble-id-v1:anonymous-one', address: '01:00:00:00:00:01', rssiDbm: -50 }
+    ]), 'Desk');
+    const archive = await appendBleHistory(filePath, ephemeralResult(startedAtMs + 3 * 60_000, [
+      { identityKey: 'ble-id-v1:anonymous-two', address: '01:00:00:00:00:02', rssiDbm: -50 }
+    ]), 'Desk');
+
+    expect(archive.sessions[1].points[0].tracking_key).toBe('ble-id-v1:anonymous-two');
+    expect(archive.sessions[1].points[0].tracking_confidence).toBe('single_observation');
   });
 });
 
@@ -150,6 +188,58 @@ function sampleResult(scannedAtMs: number, address: string): DesktopBleScanResul
       },
       findings: []
     }],
+    histories: [],
+    findings: []
+  };
+}
+
+function ephemeralResult(
+  scannedAtMs: number,
+  entries: Array<{ identityKey: string; address: string; rssiDbm: number; companyId?: number }>
+): DesktopBleScanResult {
+  return {
+    scanned_at_ms: scannedAtMs,
+    scan: {
+      adapter_count: 1,
+      elapsed_ms: 500,
+      advertisements: entries.map((entry) => ({
+        address: entry.address,
+        address_type: 'resolvable_private' as const,
+        local_name: null,
+        rssi_dbm: entry.rssiDbm,
+        service_uuids: [],
+        manufacturer_data: entry.companyId === undefined
+          ? []
+          : [{ company_id: entry.companyId, data: [1, 2, 3] }],
+        service_data: []
+      })),
+      system_devices: [],
+      errors: []
+    },
+    observations: entries.map((entry) => {
+      const identity = {
+        key: entry.identityKey,
+        confidence: 'ephemeral_address' as const,
+        protocol: null
+      };
+      return {
+        identity,
+        payload_hash: `ble-payload-v1:${entry.companyId ?? 'anonymous'}`,
+        history: {
+          identity,
+          first_seen_ms: scannedAtMs,
+          last_seen_ms: scannedAtMs,
+          observation_count: 1,
+          sensor_count: 1,
+          movement_session_count: 0,
+          rssi_min_dbm: entry.rssiDbm,
+          rssi_max_dbm: entry.rssiDbm,
+          rssi_mean_dbm: entry.rssiDbm,
+          last_payload_hash: `ble-payload-v1:${entry.companyId ?? 'anonymous'}`
+        },
+        findings: []
+      };
+    }),
     histories: [],
     findings: []
   };

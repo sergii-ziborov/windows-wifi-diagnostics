@@ -11,6 +11,7 @@ export function BluetoothDevices({
 }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
+  const [scope, setScope] = useState<'current' | 'recurring' | 'history' | 'all'>('current');
   const rows = useMemo(
     () => devices.map((device) => ({ device, intelligence: analyzeBleDevice(device) })),
     [devices]
@@ -18,6 +19,10 @@ export function BluetoothDevices({
   const categories = [...new Set(rows.map((row) => row.intelligence.category))].sort();
   const filtered = rows.filter(({ device, intelligence }) => {
     const matchesCategory = category === 'all' || intelligence.category === category;
+    const matchesScope = scope === 'all'
+      || scope === 'current' && !device.retainedOnly
+      || scope === 'recurring' && device.observationCount > 1
+      || scope === 'history' && device.retainedOnly;
     const haystack = [
       intelligence.displayName,
       intelligence.vendor,
@@ -27,7 +32,7 @@ export function BluetoothDevices({
       ...intelligence.protocols,
       ...intelligence.services.map((service) => service.name)
     ].filter(Boolean).join(' ').toLowerCase();
-    return matchesCategory && haystack.includes(query.trim().toLowerCase());
+    return matchesScope && matchesCategory && haystack.includes(query.trim().toLowerCase());
   });
 
   return (
@@ -44,6 +49,12 @@ export function BluetoothDevices({
             placeholder="Search name, vendor, service…"
             onChange={(event) => setQuery(event.target.value)}
           />
+          <select aria-label="Filter device evidence scope" value={scope} onChange={(event) => setScope(event.target.value as typeof scope)}>
+            <option value="current">Current scan</option>
+            <option value="recurring">Recurring evidence</option>
+            <option value="history">Retained only</option>
+            <option value="all">All evidence</option>
+          </select>
           <select aria-label="Filter device category" value={category} onChange={(event) => setCategory(event.target.value)}>
             <option value="all">All categories</option>
             {categories.map((item) => <option value={item} key={item}>{item}</option>)}
@@ -61,7 +72,7 @@ export function BluetoothDevices({
                 <td><button type="button" onClick={() => onSelect(device)}>{intelligence.displayName}</button><small>{device.currentAddress ?? 'Address not retained'}</small></td>
                 <td><strong>{intelligence.vendor ?? 'Unresolved manufacturer'}</strong><small>{intelligence.category} · {intelligence.confidence} confidence</small></td>
                 <td><strong>{intelligence.protocols.join(', ') || intelligence.services[0]?.name || 'No assigned service'}</strong><small>{intelligence.services.length} service UUID{intelligence.services.length === 1 ? '' : 's'}</small></td>
-                <td><strong>{intelligence.privacyLabel}</strong><small>{device.identityConfidence.replaceAll('_', ' ')}</small></td>
+                <td><strong>{intelligence.privacyLabel}</strong><small>{device.trackingConfidence.replaceAll('_', ' ')}</small></td>
                 <td>
                   <strong>{device.connected === true ? 'Connected' : device.rssiDbm === null ? device.paired === true ? 'Paired' : 'System device' : `${device.rssiDbm} dBm`}</strong>
                   <small>{device.rssiDbm === null ? `${device.transport ?? 'unknown'} · no current advertising RSSI` : device.retainedOnly ? 'latest retained radio evidence' : 'advertising now'}</small>

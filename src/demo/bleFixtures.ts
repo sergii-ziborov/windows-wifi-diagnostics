@@ -250,7 +250,7 @@ export function demoBleHistory(scannedAtMs = Date.now()): DesktopBleHistoryArchi
   });
 
   return {
-    schema_version: 3,
+    schema_version: 4,
     generated_at_ms: scannedAtMs,
     storage_warning: null,
     retention: {

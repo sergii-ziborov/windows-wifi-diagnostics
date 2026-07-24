@@ -87,7 +87,7 @@ describe('BLE history analytics', () => {
 
 function history(nowMs: number, sessions: DesktopBleHistorySession[]): DesktopBleHistoryArchive {
   return {
-    schema_version: 3,
+    schema_version: 4,
     generated_at_ms: nowMs,
     storage_warning: null,
     retention: { max_age_days: 30, max_sessions: 512 },

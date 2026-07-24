@@ -1,4 +1,5 @@
 import type { DesktopBleHistorySession } from '../../platform/bleHistory';
+import { blePointTrackingKey } from '../../platform/bleIdentityTracking';
 import {
   EvidenceMatrix,
   EvidencePulseStrip,
@@ -16,7 +17,7 @@ export function BleActivityTimelineChart({ sessions }: { sessions: DesktopBleHis
         key: session.scan_id,
         timestampMs: session.observed_at_ms,
         values: [
-          new Set(session.points.map((point) => point.identity_key)).size,
+          new Set(session.points.map(blePointTrackingKey)).size,
           session.advertisement_count,
           session.system_device_count
         ]
@@ -28,7 +29,7 @@ export function BleActivityTimelineChart({ sessions }: { sessions: DesktopBleHis
       ]}
       minimum={0}
       maximum={Math.max(1, ...sessions.flatMap((session) => [
-        new Set(session.points.map((point) => point.identity_key)).size,
+        new Set(session.points.map(blePointTrackingKey)).size,
         session.advertisement_count,
         session.system_device_count
       ]))}
@@ -45,7 +46,7 @@ export function BleRssiHistoryChart({ analytics }: { analytics: BleHistoryAnalyt
         key: session.scan_id,
         timestampMs: session.observed_at_ms,
         values: identities.map((identity) =>
-          session.points.find((point) => point.identity_key === identity.identityKey)?.rssi_dbm ?? null
+          session.points.find((point) => blePointTrackingKey(point) === identity.identityKey)?.rssi_dbm ?? null
         )
       }))}
       series={identities.map((identity, index) => ({ label: identity.label, color: COLORS[index] }))}
@@ -134,7 +135,7 @@ export function BleRecurrenceMatrixChart({
     label: identity.label,
     meta: `${identity.scanCoveragePercent}% scan coverage`,
     values: visibleSessions.map((session) =>
-      session.points.find((point) => point.identity_key === identity.identityKey)?.rssi_dbm ?? null
+      session.points.find((point) => blePointTrackingKey(point) === identity.identityKey)?.rssi_dbm ?? null
     )
   }));
   return (

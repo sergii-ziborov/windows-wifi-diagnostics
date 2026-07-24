@@ -62,6 +62,7 @@ function device(overrides: Partial<BleWorkspaceDevice>): BleWorkspaceDevice {
     systemAppearance: null,
     inventorySource: null,
     mergeConfidence: null,
-    ...overrides
+    ...overrides,
+    trackingConfidence: overrides.trackingConfidence ?? 'stable_identity'
   };
 }

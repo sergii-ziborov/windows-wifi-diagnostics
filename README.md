@@ -56,6 +56,13 @@ administered, and IP addresses come from documentation-only ranges.
   local identity history, persistence/disappearance, possible-clone and beacon
   flood evidence. Findings always include limitations; RSSI is not presented
   as physical distance.
+- CoreBluetooth peer UUIDs survive private-address rotation on macOS. On
+  Windows/Linux, recent anonymous rotations are associated one-to-one only
+  when timing, advertisement family and RSSI agree; the UI labels this
+  probabilistic instead of inventing a permanent device UUID. Old one-off
+  private addresses remain in Analytics but stop appearing as retained devices;
+  Map and Devices open on current evidence, with retained/recurring views still
+  available through filters.
 - Windows system Bluetooth inventory through DeviceInformation for friendly
   names, Classic/BLE transport, paired/connected state, and OS device type.
   It is joined to advertising evidence only when the Bluetooth address matches
@@ -209,9 +216,10 @@ writes SHA-256 manifests, and creates a draft GitHub release for final review.
 - Runtime state stays in the Electron user-data directory unless exported.
 - BLE analytics retain privacy-minimized scan sessions for at most 30 days or
   512 scans. Raw Bluetooth addresses and manufacturer/service payload bytes are
-  not written to that archive. It retains opaque identity keys, Company IDs,
-  advertised service UUIDs, names, RSSI, zones, and timestamps; `Reset history`
-  clears it together with the Rust tracker.
+  not written to that archive. It retains opaque identity and continuity keys,
+  association confidence, Company IDs, advertised service UUIDs, names, RSSI,
+  zones, and timestamps; `Reset history` clears it together with the Rust
+  tracker.
 - SSIDs, BSSIDs, MAC addresses, IP configuration, and diagnostic bundles are
   sensitive network/location evidence; inspect them before sharing.
 - Saved Wi-Fi secrets are Windows-only, revealed only after an explicit action,
