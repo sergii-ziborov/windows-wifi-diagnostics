@@ -149,6 +149,7 @@ function sampleResult(scannedAtMs: number, address: string): DesktopBleScanResul
     scan: {
       adapter_count: 1,
       elapsed_ms: 500,
+      discovery_mode: 'active',
       advertisements: [{
         address,
         address_type: 'random_static',
@@ -202,6 +203,7 @@ function ephemeralResult(
     scan: {
       adapter_count: 1,
       elapsed_ms: 500,
+      discovery_mode: 'active',
       advertisements: entries.map((entry) => ({
         address: entry.address,
         address_type: 'resolvable_private' as const,

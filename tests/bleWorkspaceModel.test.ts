@@ -193,6 +193,7 @@ function result(
     scan: {
       adapter_count: 1,
       elapsed_ms: 500,
+      discovery_mode: 'active',
       advertisements,
       system_devices: systemDevices,
       errors: []
