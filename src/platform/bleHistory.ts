@@ -7,15 +7,21 @@ import type {
   RadioChronBleIdentityConfidence,
   RadioChronBleRiskKind
 } from 'radiochron';
+import {
+  applyBleIdentityTracking,
+  type BleTrackingConfidence
+} from './bleIdentityTracking';
 import type { DesktopBleScanResult } from './radiochronBle';
 
-const BLE_HISTORY_SCHEMA_VERSION = 3 as const;
+const BLE_HISTORY_SCHEMA_VERSION = 4 as const;
 const BLE_HISTORY_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1_000;
 const BLE_HISTORY_MAX_SESSIONS = 512;
 const BLE_HISTORY_MAX_POINTS_PER_SESSION = 512;
 
 export interface DesktopBleHistoryPoint {
   identity_key: string;
+  tracking_key?: string;
+  tracking_confidence?: BleTrackingConfidence;
   identity_confidence: RadioChronBleIdentityConfidence;
   protocol: string | null;
   local_name: string | null;
@@ -110,6 +116,7 @@ export async function appendBleHistory(
   const sessions = [...current.sessions.filter((item) => item.observed_at_ms >= cutoff), session]
     .sort((left, right) => left.observed_at_ms - right.observed_at_ms)
     .slice(-BLE_HISTORY_MAX_SESSIONS);
+  applyBleIdentityTracking(sessions);
   const archive: DesktopBleHistoryArchive = {
     ...emptyBleHistory(nowMs),
     sessions
@@ -139,6 +146,10 @@ function createSession(result: DesktopBleScanResult, zone: string | null): Deskt
       if (!advertisement) return null;
       return {
         identity_key: observation.identity.key,
+        tracking_key: observation.identity.key,
+        tracking_confidence: observation.identity.confidence === 'ephemeral_address'
+          ? 'single_observation'
+          : 'stable_identity',
         identity_confidence: observation.identity.confidence,
         protocol: observation.identity.protocol,
         local_name: advertisement.local_name?.slice(0, 160) ?? null,
@@ -186,7 +197,7 @@ function createSession(result: DesktopBleScanResult, zone: string | null): Deskt
 }
 
 function normalizeArchive(value: unknown, nowMs: number): DesktopBleHistoryArchive {
-  if (!isRecord(value) || ![1, 2, BLE_HISTORY_SCHEMA_VERSION].includes(Number(value.schema_version)) || !Array.isArray(value.sessions)) {
+  if (!isRecord(value) || ![1, 2, 3, BLE_HISTORY_SCHEMA_VERSION].includes(Number(value.schema_version)) || !Array.isArray(value.sessions)) {
     return emptyBleHistory(nowMs, 'Stored Bluetooth history uses an unsupported or invalid schema.');
   }
 
@@ -196,6 +207,7 @@ function normalizeArchive(value: unknown, nowMs: number): DesktopBleHistoryArchi
     .filter((session): session is DesktopBleHistorySession => session !== null && session.observed_at_ms >= cutoff)
     .sort((left, right) => left.observed_at_ms - right.observed_at_ms)
     .slice(-BLE_HISTORY_MAX_SESSIONS);
+  applyBleIdentityTracking(sessions);
   return {
     ...emptyBleHistory(nowMs),
     sessions
@@ -247,6 +259,10 @@ function normalizePoint(value: unknown): DesktopBleHistoryPoint | null {
   if (!isIdentityConfidence(value.identity_confidence) || !isAddressType(value.address_type)) return null;
   return {
     identity_key: value.identity_key.slice(0, 160),
+    tracking_key: normalizedOptionalText(value.tracking_key, 160) ?? value.identity_key.slice(0, 160),
+    tracking_confidence: isTrackingConfidence(value.tracking_confidence)
+      ? value.tracking_confidence
+      : undefined,
     identity_confidence: value.identity_confidence,
     protocol: normalizedOptionalText(value.protocol, 80),
     local_name: normalizedOptionalText(value.local_name, 160),
@@ -313,6 +329,15 @@ function isIdentityConfidence(value: unknown): value is RadioChronBleIdentityCon
 
 function isAddressType(value: unknown): value is RadioChronBleAddressType {
   return ['public', 'random_static', 'resolvable_private', 'non_resolvable_private', 'unknown'].includes(String(value));
+}
+
+function isTrackingConfidence(value: unknown): value is BleTrackingConfidence {
+  return [
+    'stable_identity',
+    'same_ephemeral_address',
+    'probabilistic_rotation',
+    'single_observation'
+  ].includes(String(value));
 }
 
 function isRiskKind(value: unknown): value is RadioChronBleRiskKind {

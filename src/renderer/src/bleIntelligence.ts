@@ -53,6 +53,9 @@ export function analyzeBleDevice(device: BleWorkspaceDevice): BleDeviceIntellige
     device.inventorySource ? `Friendly name, connection state and type came from ${device.inventorySource}.` : null,
     device.mergeConfidence === 'exact_address' ? 'System inventory and radio evidence were joined by an exact Bluetooth address.' : null,
     device.mergeConfidence === 'system_only' ? 'This system device was not observed advertising during the current scan.' : null,
+    device.trackingConfidence === 'probabilistic_rotation'
+      ? 'Rotating private addresses were associated one-to-one using recent signal and advertisement evidence; this is not a permanent device identifier.'
+      : null,
     company ? `Manufacturer data company ID resolves to ${company}.` : null,
     unresolvedCompanyIds.length
       ? `Manufacturer data includes unassigned or unresolved ID${unresolvedCompanyIds.length === 1 ? '' : 's'} ${unresolvedCompanyIds.map(formatCompanyId).join(', ')}.`

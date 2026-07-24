@@ -37,6 +37,7 @@ export function BluetoothDeviceModal({
           <Fact label="Address behavior" value={intelligence.privacyLabel} />
           <Fact label="Identity key" value={shortBleIdentity(device.identityKey)} mono title={device.identityKey} />
           <Fact label="Identity confidence" value={device.identityConfidence.replaceAll('_', ' ')} />
+          <Fact label="History association" value={device.trackingConfidence.replaceAll('_', ' ')} />
           <Fact label="Signal" value={device.rssiDbm === null ? 'Not advertising in this scan' : `${device.rssiDbm} dBm`} />
           <Fact label="Tx power" value={device.txPowerDbm === null ? 'Not advertised' : `${device.txPowerDbm} dBm`} />
           <Fact label="Connectable" value={device.connectable === null ? 'Unknown' : device.connectable ? 'Yes' : 'No'} />

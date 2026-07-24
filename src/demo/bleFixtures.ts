@@ -11,6 +11,7 @@ export function demoBleScanResult(): DesktopBleViewResult {
     scan: {
       adapter_count: 1,
       elapsed_ms: 1_500,
+      discovery_mode: 'active',
       advertisements: [
         {
           address: '02:00:00:BE:AC:01',
@@ -249,7 +250,7 @@ export function demoBleHistory(scannedAtMs = Date.now()): DesktopBleHistoryArchi
   });
 
   return {
-    schema_version: 3,
+    schema_version: 4,
     generated_at_ms: scannedAtMs,
     storage_warning: null,
     retention: {

@@ -3,6 +3,7 @@ import type {
   DesktopBleHistoryPoint,
   DesktopBleHistorySession
 } from '../../platform/bleHistory';
+import { blePointTrackingKey } from '../../platform/bleIdentityTracking';
 import { analyzeRadioPresence, type RadioPresencePattern } from './radioHistoryPatterns';
 
 export type BleAnalyticsWindow = '1h' | '24h' | '7d' | 'all';
@@ -81,7 +82,7 @@ export function analyzeBleHistory(
   const sessions = allSessions
     .filter((session) => session.observed_at_ms >= cutoff && session.observed_at_ms <= nowMs)
     .sort((left, right) => left.observed_at_ms - right.observed_at_ms);
-  const identityKeys = new Set(sessions.flatMap((session) => session.points.map((point) => point.identity_key)));
+  const identityKeys = new Set(sessions.flatMap((session) => session.points.map(blePointTrackingKey)));
   const identities = [...identityKeys]
     .map((identityKey) => analyzeIdentity(identityKey, sessions, nowMs))
     .sort((left, right) =>
@@ -119,8 +120,8 @@ function compareSessions(
   previous: DesktopBleHistorySession,
   current: DesktopBleHistorySession
 ): BleHistoryChange {
-  const previousKeys = new Set(previous.points.map((point) => point.identity_key));
-  const currentKeys = new Set(current.points.map((point) => point.identity_key));
+  const previousKeys = new Set(previous.points.map(blePointTrackingKey));
+  const currentKeys = new Set(current.points.map(blePointTrackingKey));
   return {
     tsMs: current.observed_at_ms,
     appeared: [...currentKeys].filter((key) => !previousKeys.has(key)).length,
@@ -134,21 +135,22 @@ function analyzeIdentity(
   nowMs: number
 ): BleIdentityAnalytics {
   const firstSessionIndex = sessions.findIndex((session) =>
-    session.points.some((point) => point.identity_key === identityKey)
+    session.points.some((point) => blePointTrackingKey(point) === identityKey)
   );
   const eligibleSessions = firstSessionIndex < 0 ? [] : sessions.slice(firstSessionIndex);
   const sessionsWithIdentity = eligibleSessions.filter((session) =>
-    session.points.some((point) => point.identity_key === identityKey)
+    session.points.some((point) => blePointTrackingKey(point) === identityKey)
   );
   const points = sessionsWithIdentity.flatMap((session) =>
-    session.points.filter((point) => point.identity_key === identityKey)
+    session.points.filter((point) => blePointTrackingKey(point) === identityKey)
   );
   const latest = points.at(-1)!;
   const rssiValues = points.map((point) => point.rssi_dbm);
   const mean = average(rssiValues);
+  const observationIdentityKeys = new Set(points.map((point) => point.identity_key));
   const findings = sessions
     .flatMap((session) => session.findings)
-    .filter((finding) => finding.identity_key === identityKey);
+    .filter((finding) => finding.identity_key && observationIdentityKeys.has(finding.identity_key));
   const labelPoint = [...points].reverse().find((point) => point.local_name) ?? latest;
   const presence = analyzeRadioPresence(
     sessionsWithIdentity.map((session) => session.observed_at_ms),
@@ -183,14 +185,14 @@ function analyzePresenceRecords(
   nowMs: number
 ): BlePresenceAnalytics[] {
   const sessionTimes = sessions.map((session) => session.observed_at_ms);
-  const radioKeys = new Set(sessions.flatMap((session) => session.points.map((point) => point.identity_key)));
+  const radioKeys = new Set(sessions.flatMap((session) => session.points.map(blePointTrackingKey)));
   const systemIds = new Set(sessions.flatMap((session) => session.system_devices.map((device) => device.id)));
   const radio = [...radioKeys].map((identityKey): BlePresenceAnalytics => {
     const observed = sessions.filter((session) =>
-      session.points.some((point) => point.identity_key === identityKey)
+      session.points.some((point) => blePointTrackingKey(point) === identityKey)
     );
     const points = observed.flatMap((session) =>
-      session.points.filter((point) => point.identity_key === identityKey)
+      session.points.filter((point) => blePointTrackingKey(point) === identityKey)
     );
     const latest = points.at(-1)!;
     const labelPoint = [...points].reverse().find((point) => point.local_name) ?? latest;

@@ -9,11 +9,16 @@ import type {
   DesktopBleHistoryPoint,
   DesktopBleViewResult
 } from '../../platform/bleHistory';
+import {
+  blePointTrackingKey,
+  type BleTrackingConfidence
+} from '../../platform/bleIdentityTracking';
 
 export interface BleWorkspaceDevice {
   key: string;
   identityKey: string;
   identityConfidence: RadioChronBleIdentityConfidence | 'system_inventory';
+  trackingConfidence: BleTrackingConfidence;
   protocol: string | null;
   currentAddress: string | null;
   addressType: RadioChronBleAddressType;
@@ -47,17 +52,24 @@ export function buildBleWorkspaceDevices(
 ): BleWorkspaceDevice[] {
   const retained = retainedDeviceMap(history);
   const retainedSystem = retainedSystemDeviceMap(history);
+  const currentTracking = currentTrackingMap(result, history);
   const devices: BleWorkspaceDevice[] = (result?.scan.advertisements ?? []).map((advertisement, index): BleWorkspaceDevice => {
     const observation = result?.observations[index];
     const proposedKey = observation?.identity.key ?? advertisement.protocol_identity ?? advertisement.address;
-    const identityKey = matchingRetainedKey(proposedKey, advertisement.protocol_identity ?? null, retained) ?? proposedKey;
-    const coreHistory = result?.histories.find((item) => item.identity.key === identityKey);
-    const retainedDevice = retained.get(identityKey);
-    retained.delete(identityKey);
+    const trackedPoint = currentTracking.get(proposedKey);
+    const trackingKey = trackedPoint?.trackingKey
+      ?? matchingRetainedKey(proposedKey, advertisement.protocol_identity ?? null, retained)
+      ?? proposedKey;
+    const coreHistory = result?.histories.find((item) => item.identity.key === proposedKey);
+    const retainedDevice = retained.get(trackingKey);
+    retained.delete(trackingKey);
     return {
-      key: identityKey,
-      identityKey,
+      key: trackingKey,
+      identityKey: proposedKey,
       identityConfidence: observation?.identity.confidence ?? identityConfidenceForAddress(advertisement.address_type),
+      trackingConfidence: trackedPoint?.trackingConfidence
+        ?? retainedDevice?.trackingConfidence
+        ?? trackingConfidenceForIdentity(observation?.identity.confidence),
       protocol: observation?.identity.protocol ?? null,
       currentAddress: advertisement.address,
       addressType: advertisement.address_type,
@@ -114,6 +126,7 @@ export function buildBleWorkspaceDevices(
       key: `system:${systemDevice.id}`,
       identityKey: `system:${systemDevice.id}`,
       identityConfidence: 'system_inventory',
+      trackingConfidence: 'stable_identity',
       protocol: null,
       currentAddress: systemDevice.address,
       addressType: 'unknown',
@@ -142,17 +155,21 @@ export function buildBleWorkspaceDevices(
     });
   }
 
-  return [...devices, ...retained.values(), ...retainedSystem.values()].sort(compareDevices);
+  const retainedDevices = [...retained.values()].filter((device) =>
+    device.identityConfidence !== 'ephemeral_address' || device.observationCount > 1
+  );
+  return [...devices, ...retainedDevices, ...retainedSystem.values()].sort(compareDevices);
 }
 
 function retainedDeviceMap(history: DesktopBleHistoryArchive | null): Map<string, BleWorkspaceDevice> {
   const points = new Map<string, { point: DesktopBleHistoryPoint; first: number; last: number; count: number; zones: Set<string> }>();
   for (const session of history?.sessions ?? []) {
     for (const point of session.points) {
-      const current = points.get(point.identity_key);
+      const trackingKey = blePointTrackingKey(point);
+      const current = points.get(trackingKey);
       const zones = current?.zones ?? new Set<string>();
       if (session.zone) zones.add(session.zone);
-      points.set(point.identity_key, {
+      points.set(trackingKey, {
         point,
         first: Math.min(current?.first ?? session.observed_at_ms, session.observed_at_ms),
         last: Math.max(current?.last ?? session.observed_at_ms, session.observed_at_ms),
@@ -162,10 +179,11 @@ function retainedDeviceMap(history: DesktopBleHistoryArchive | null): Map<string
     }
   }
 
-  return new Map([...points.entries()].map(([identityKey, item]) => [identityKey, {
-    key: identityKey,
-    identityKey,
+  return new Map([...points.entries()].map(([trackingKey, item]) => [trackingKey, {
+    key: trackingKey,
+    identityKey: item.point.identity_key,
     identityConfidence: item.point.identity_confidence,
+    trackingConfidence: item.point.tracking_confidence ?? trackingConfidenceForIdentity(item.point.identity_confidence),
     protocol: item.point.protocol,
     currentAddress: null,
     addressType: item.point.address_type,
@@ -203,6 +221,7 @@ function retainedSystemDeviceMap(history: DesktopBleHistoryArchive | null): Map<
         key: `system:${point.id}`,
         identityKey: `system:${point.id}`,
         identityConfidence: 'system_inventory',
+        trackingConfidence: 'stable_identity',
         protocol: null,
         currentAddress: null,
         addressType: 'unknown',
@@ -234,10 +253,30 @@ function retainedSystemDeviceMap(history: DesktopBleHistoryArchive | null): Map<
   return devices;
 }
 
+function currentTrackingMap(
+  result: DesktopBleViewResult | null,
+  history: DesktopBleHistoryArchive | null
+): Map<string, { trackingKey: string; trackingConfidence: BleTrackingConfidence }> {
+  if (!result) return new Map();
+  const session = [...(history?.sessions ?? [])]
+    .reverse()
+    .find((item) => item.observed_at_ms === result.scanned_at_ms);
+  return new Map((session?.points ?? []).map((point) => [point.identity_key, {
+    trackingKey: blePointTrackingKey(point),
+    trackingConfidence: point.tracking_confidence ?? trackingConfidenceForIdentity(point.identity_confidence)
+  }]));
+}
+
 function identityConfidenceForAddress(addressType: RadioChronBleAddressType): RadioChronBleIdentityConfidence {
   return addressType === 'public' || addressType === 'random_static'
     ? 'static_address'
     : 'ephemeral_address';
+}
+
+function trackingConfidenceForIdentity(
+  confidence: RadioChronBleIdentityConfidence | undefined
+): BleTrackingConfidence {
+  return confidence === 'ephemeral_address' ? 'single_observation' : 'stable_identity';
 }
 
 function matchingRetainedKey(
