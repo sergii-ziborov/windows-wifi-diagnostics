@@ -234,7 +234,11 @@ See [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md), and
 - [`radiochron`](https://github.com/sergii-ziborov/radiochron) — dependency-light
   Rust IoT core.
 - [`radiochron-js`](https://github.com/sergii-ziborov/radiochron-js) — Node/npm
-  library over the core.
+  CommonJS/ESM library and streaming API over the core.
+- [`radiochron-mcp`](https://github.com/sergii-ziborov/radiochron-mcp) — separate
+  pure-Rust MCP diagnostics server.
+- [`radiochron-agent`](https://github.com/sergii-ziborov/radiochron-agent) —
+  unattended durable IoT/fleet collector.
 - [`radiochron-electron`](https://github.com/sergii-ziborov/radiochron-electron)
   — this separate desktop application.
 - [`radiochron-site`](https://github.com/sergii-ziborov/radiochron-site) — website
